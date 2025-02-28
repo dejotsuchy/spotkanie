@@ -14,7 +14,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
+        document.addEventListener("DOMContentLoaded", async function () {
             const adminEmail = "projektweselelubuskie@gmail.com";
 
             // Konfiguracja Firebase
@@ -22,17 +22,17 @@
                 apiKey: "API_KEY",
                 authDomain: "projekt-rezerwacja.firebaseapp.com",
                 projectId: "projekt-rezerwacja",
-                storageBucket: "projekt-rezerwacja.firebasestorage.app",
+                storageBucket: "projekt-rezerwacja.appspot.com",
                 messagingSenderId: "118180989579",
                 appId: "1:118180989579:ios:b2d2961d5f8b4b1963628e"
             };
 
             firebase.initializeApp(firebaseConfig);
             const db = firebase.firestore();
-            console.log("Firebase załadowany poprawnie!");
+            console.log("✅ Firebase załadowany poprawnie!");
 
             emailjs.init("xqyVbSjeXibISoZml");
-            console.log("EmailJS załadowany poprawnie!");
+            console.log("✅ EmailJS załadowany poprawnie!");
 
             // Sprawdzanie, czy użytkownik to administrator
             firebase.auth().onAuthStateChanged(function(user) {
@@ -48,9 +48,12 @@
             async function loadAvailableTimes() {
                 const dateSelect = document.getElementById("date");
                 const timeSelect = document.getElementById("time");
+                const terminyLista = document.getElementById("terminyLista");
+                
                 dateSelect.innerHTML = "<option value=''>Wybierz datę</option>";
                 timeSelect.innerHTML = "<option value=''>Wybierz godzinę</option>";
-                
+                terminyLista.innerHTML = "";
+
                 const snapshot = await availableTimesRef.get();
                 const dates = {};
                 snapshot.forEach(doc => {
@@ -58,31 +61,49 @@
                     if (!dates[data.date]) {
                         dates[data.date] = [];
                     }
-                    dates[data.date].push(data.time);
+                    dates[data.date].push({ time: data.time, id: doc.id });
                 });
-                
+
                 Object.keys(dates).forEach(date => {
                     let option = document.createElement("option");
                     option.value = date;
                     option.textContent = date;
                     dateSelect.appendChild(option);
+
+                    let dateItem = document.createElement("li");
+                    dateItem.innerHTML = `<strong>${date}</strong>`;
+                    terminyLista.appendChild(dateItem);
+
+                    dates[date].forEach(slot => {
+                        let timeItem = document.createElement("li");
+                        timeItem.textContent = `${slot.time}`;
+                        let deleteBtn = document.createElement("button");
+                        deleteBtn.textContent = "Usuń";
+                        deleteBtn.onclick = () => deleteTime(slot.id);
+                        timeItem.appendChild(deleteBtn);
+                        terminyLista.appendChild(timeItem);
+                    });
                 });
-                
+
                 dateSelect.addEventListener("change", function() {
                     timeSelect.innerHTML = "<option value=''>Wybierz godzinę</option>";
                     const selectedDate = this.value;
                     if (dates[selectedDate]) {
-                        dates[selectedDate].forEach(time => {
+                        dates[selectedDate].forEach(slot => {
                             let option = document.createElement("option");
-                            option.value = time;
-                            option.textContent = time;
+                            option.value = slot.time;
+                            option.textContent = slot.time;
                             timeSelect.appendChild(option);
                         });
                     }
                 });
             }
-            
-            loadAvailableTimes();
+
+            async function deleteTime(id) {
+                await availableTimesRef.doc(id).delete();
+                alert("Termin usunięty!");
+                loadAvailableTimes();
+            }
 
             document.getElementById("adminForm").addEventListener("submit", async function(event) {
                 event.preventDefault();
@@ -92,43 +113,51 @@
                 alert("Termin dodany!");
                 loadAvailableTimes();
             });
+
+            document.getElementById("bookingForm").addEventListener("submit", async function(event) {
+                event.preventDefault();
+                const selectedDate = document.getElementById("date").value;
+                const selectedTime = document.getElementById("time").value;
+
+                if (!selectedDate || !selectedTime) {
+                    alert("Wybierz datę i godzinę!");
+                    return;
+                }
+
+                // Wysyłanie emaila z potwierdzeniem
+                emailjs.send("service_f8ccgjc", "template_8x51wzj", {
+                    date: selectedDate,
+                    time: selectedTime,
+                    email: adminEmail
+                }).then(() => {
+                    alert("Rezerwacja potwierdzona!");
+                }).catch(error => {
+                    console.error("❌ Błąd EmailJS:", error);
+                });
+
+                // Usuwanie terminu z dostępnych
+                const snapshot = await availableTimesRef.where("date", "==", selectedDate)
+                                                        .where("time", "==", selectedTime)
+                                                        .get();
+                snapshot.forEach(async doc => {
+                    await availableTimesRef.doc(doc.id).delete();
+                });
+
+                loadAvailableTimes();
+            });
+
+            loadAvailableTimes();
         });
     </script>
     
     <style>
-        body { 
-            font-family: 'Arial', sans-serif; 
-            text-align: center; 
-            background-color: #f4f4f4; 
-            color: #333; 
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            max-width: 600px;
-            margin: 30px auto;
-            padding: 20px;
-            background-color: #ffffff;
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-        }
-        input, select, button {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        button {
-            background-color: #d4af37;
-            color: white;
-            font-size: 16px;
-            cursor: pointer;
-        }
+        body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; color: #333; }
+        .container { max-width: 600px; margin: 30px auto; padding: 20px; background-color: #ffffff; border-radius: 10px; }
+        input, select, button { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        button { background-color: #d4af37; color: white; font-size: 16px; cursor: pointer; }
     </style>
 </head>
 <body>
-    <!-- Panel administratora widoczny tylko dla Ciebie -->
     <div class="container" id="adminPanel" style="display: none;">
         <h2>Dodawanie dostępnych terminów (Administrator)</h2>
         <form id="adminForm">
@@ -136,8 +165,10 @@
             <input type="time" id="adminTime" required>
             <button type="submit">Dodaj termin</button>
         </form>
+        <h3>Lista dostępnych terminów:</h3>
+        <ul id="terminyLista"></ul>
     </div>
-    
+
     <div class="container">
         <h2>Rezerwacja Spotkania</h2>
         <form id="bookingForm">
