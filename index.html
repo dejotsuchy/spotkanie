@@ -14,121 +14,173 @@
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     
     <script>
-        document.addEventListener("DOMContentLoaded", async function () {
-            console.log("✅ Ładowanie Firebase...");
-            
-            const firebaseConfig = {
-                apiKey: "TWOJ_API_KEY",
-                authDomain: "projekt-rezerwacja.firebaseapp.com",
-                projectId: "projekt-rezerwacja",
-                storageBucket: "projekt-rezerwacja.appspot.com",
-                messagingSenderId: "118180989579",
-                appId: "1:118180989579:web:xxx"
-            };
+        document.addEventListener("DOMContentLoaded", function () {
+            try {
+                console.log("Ładowanie Firebase...");
+                
+                const firebaseConfig = {
+                    apiKey: "API_KEY",
+                    authDomain: "projekt-rezerwacja.firebaseapp.com",
+                    projectId: "projekt-rezerwacja",
+                    storageBucket: "projekt-rezerwacja.firebasestorage.app",
+                    messagingSenderId: "118180989579",
+                    appId: "1:118180989579:ios:b2d2961d5f8b4b1963628e"
+                };
 
-            if (!firebase.apps.length) {
                 firebase.initializeApp(firebaseConfig);
-                console.log("✅ Firebase załadowany poprawnie!");
-            }
-            
-            const db = firebase.firestore();
-            const auth = firebase.auth();
-            const adminEmail = "projektweselelubuskie@gmail.com";
-            
-            document.getElementById("loginBtn").addEventListener("click", function() {
-                const provider = new firebase.auth.GoogleAuthProvider();
-                auth.signInWithPopup(provider).then((result) => {
-                    console.log("✅ Zalogowano:", result.user.email);
-                }).catch((error) => {
-                    console.error("❌ Błąd logowania:", error);
-                });
-            });
+                const db = firebase.firestore();
+                console.log("Firebase załadowany poprawnie!", firebase);
 
-            document.getElementById("logoutBtn").addEventListener("click", function() {
-                auth.signOut().then(() => {
-                    console.log("✅ Wylogowano");
-                });
-            });
-
-            auth.onAuthStateChanged((user) => {
-                if (user && user.email === adminEmail) {
-                    document.getElementById("adminPanel").style.display = "block";
-                    document.getElementById("loginBtn").style.display = "none";
-                    document.getElementById("logoutBtn").style.display = "block";
-                } else {
-                    document.getElementById("adminPanel").style.display = "none";
-                    document.getElementById("loginBtn").style.display = "block";
-                    document.getElementById("logoutBtn").style.display = "none";
+                emailjs.init("xqyVbSjeXibISoZml");
+                console.log("EmailJS załadowany poprawnie!");
+                
+                function sendEmailNotification(name, email, weddingDate, weddingPlace, services, date, time, message, meetingType) {
+                    console.log("Wysyłanie e-maila...");
+                    emailjs.send("service_f8ccgjc", "template_8x51wzj", {
+                        from_name: name,
+                        from_email: email,
+                        to_name: "Mateusz",
+                        message: `Nowa rezerwacja od ${name}:
+Email: ${email}
+Data wesela: ${weddingDate}
+Miejsce wesela: ${weddingPlace}
+Usługodawcy: ${services}
+Rezerwacja na: ${date} o ${time}
+Wiadomość: ${message}
+Rodzaj spotkania: ${meetingType}`,
+                        admin_email: "projektweselelubuskie@gmail.com"
+                    }).then(
+                        function(response) {
+                            console.log("Email wysłany: ", response.status, response.text);
+                        },
+                        function(error) {
+                            console.error("Błąd wysyłania emaila: ", error);
+                            alert("Błąd wysyłania e-maila: " + error.text);
+                        }
+                    );
                 }
-            });
-
-            async function loadAvailableTimes() {
-                const dateSelect = document.getElementById("date");
-                const timeSelect = document.getElementById("time");
-                dateSelect.innerHTML = "<option value=''>Wybierz datę</option>";
-                timeSelect.innerHTML = "<option value=''>Wybierz godzinę</option>";
-
-                const snapshot = await db.collection("dostepne_terminy").get();
-                const dates = {};
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    if (!dates[data.date]) {
-                        dates[data.date] = [];
-                    }
-                    dates[data.date].push(data.time);
-                });
-
-                Object.keys(dates).forEach(date => {
-                    let option = document.createElement("option");
-                    option.value = date;
-                    option.textContent = date;
-                    dateSelect.appendChild(option);
-                });
-
-                dateSelect.addEventListener("change", function() {
-                    timeSelect.innerHTML = "<option value=''>Wybierz godzinę</option>";
-                    const selectedDate = this.value;
-                    if (dates[selectedDate]) {
-                        dates[selectedDate].forEach(time => {
-                            let option = document.createElement("option");
-                            option.value = time;
-                            option.textContent = time;
-                            timeSelect.appendChild(option);
-                        });
+                
+                document.getElementById("bookingForm").addEventListener("submit", async function(event) {
+                    event.preventDefault();
+                    try {
+                        const name = document.getElementById("name").value;
+                        const email = document.getElementById("email").value;
+                        const weddingDate = document.getElementById("weddingDate").value;
+                        const weddingPlace = document.getElementById("weddingPlace").value;
+                        const services = document.getElementById("services").value;
+                        const date = document.getElementById("date").value;
+                        const time = document.getElementById("time").value;
+                        const message = document.getElementById("message").value;
+                        const meetingType = document.getElementById("meetingType").value;
+                        console.log("Nowa rezerwacja: ", name, email, weddingDate, weddingPlace, services, date, time, message, meetingType);
+                        console.log("Rodzaj spotkania:", meetingType);
+                        const docRef = db.collection("rezerwacje").doc(date);
+                        const doc = await docRef.get();
+                        if (doc.exists && doc.data().times.includes(time)) {
+                            alert("Termin już zajęty!");
+                        } else {
+                            await docRef.set({ times: firebase.firestore.FieldValue.arrayUnion({ time, name, email, weddingDate, weddingPlace, services, message, meetingType }) }, { merge: true });
+                            document.getElementById("confirmation").style.display = "block";
+                            sendEmailNotification(name, email, weddingDate, weddingPlace, services, date, time, message, meetingType);
+                        }
+                    } catch (error) {
+                        console.error("Błąd podczas rezerwacji: ", error);
                     }
                 });
+            } catch (error) {
+                console.error("Błąd podczas ładowania Firebase: ", error);
             }
-
-            loadAvailableTimes();
         });
     </script>
+    
+    <style>
+        body { 
+            font-family: 'Arial', sans-serif; 
+            text-align: center; 
+            background-color: #f4f4f4; 
+            color: #333; 
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+        header {
+            background-color: #333;
+            color: #fff;
+            padding: 20px 0;
+        }
+        header img {
+            max-width: 200px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            margin-top: 10px;
+            font-weight: bold;
+            text-align: left;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #d4af37;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #b89030;
+        }
+    </style>
 </head>
 <body>
-    <button id="loginBtn">Zaloguj się</button>
-    <button id="logoutBtn" style="display:none;">Wyloguj się</button>
-
-    <div class="container">
-        <header style='text-align: center; padding: 20px;'>
-        <img src="https://www.projekt-wesele.pl/wp-content/uploads/2021/03/projekt-wesele-logo-01.png" alt="Projekt Wesele" style='max-width: 200px;'>
+    <header>
+        <img src="https://www.projekt-wesele.pl/wp-content/uploads/2021/03/projekt-wesele-logo-01.png" alt="Projekt Wesele">
     </header>
-        <div id="adminPanel" style="display: none;">
-        <form id="adminForm">
-            <input type="date" id="adminDate" required>
-            <input type="time" id="adminTime" required>
-            <button type="submit">Dodaj termin</button>
-        </div>
-        </form>
-    </div>
     
     <div class="container">
         <h2>Rezerwacja Spotkania</h2>
         <form id="bookingForm">
+            <label for="meetingType">Rodzaj spotkania:</label>
+            <select id="meetingType" required>
+                <option value="online">Online</option>
+                <option value="biuro">W biurze (Zielona Góra)</option>
+            </select>
+            <label for="name">Imię i nazwisko:</label>
+            <input type="text" id="name" required>
+            <label for="email">E-mail:</label>
+            <input type="email" id="email" required>
+            <label for="weddingDate">Data wesela:</label>
+            <input type="date" id="weddingDate" required>
+            <label for="weddingPlace">Miejsce wesela:</label>
+            <input type="text" id="weddingPlace" required>
+            <label for="services">Usługodawcy:</label>
+            <input type="text" id="services" placeholder="Wpisz usługodawców" required>
+            <label for="message">Dodatkowa wiadomość:</label>
+            <textarea id="message" placeholder="Wpisz dodatkowe informacje"></textarea>
             <label for="date">Data:</label>
-            <select id="date" required></select>
+            <input type="date" id="date" required>
             <label for="time">Godzina:</label>
-            <select id="time" required></select>
+            <input type="time" id="time" required>
             <button type="submit">Zarezerwuj</button>
         </form>
+        <p id="confirmation" style="color:green; display:none;">Rezerwacja potwierdzona!</p>
     </div>
 </body>
 </html>
+
