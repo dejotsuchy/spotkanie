@@ -32,19 +32,22 @@
                 console.log("Firebase załadowany poprawnie!", firebase);
 
                 emailjs.init("xqyVbSjeXibISoZml");
+                console.log("EmailJS załadowany poprawnie!");
                 
                 function sendEmailNotification(name, date, time) {
+                    console.log("Wysyłanie e-maila...");
                     emailjs.send("service_f8ccgjc", "template_8x51wzj", {
-                        user_name: name,
-                        meeting_date: date,
-                        meeting_time: time,
+                        from_name: name,
+                        to_name: "Mateusz",
+                        message: `Rezerwacja na ${date} o ${time}`,
                         admin_email: "projektweselelubuskie@gmail.com"
                     }).then(
                         function(response) {
                             console.log("Email wysłany: ", response.status, response.text);
                         },
                         function(error) {
-                            console.log("Błąd wysyłania emaila: ", error);
+                            console.error("Błąd wysyłania emaila: ", error);
+                            alert("Błąd wysyłania e-maila: " + error.text);
                         }
                     );
                 }
@@ -55,6 +58,7 @@
                         const name = document.getElementById("name").value;
                         const date = document.getElementById("date").value;
                         const time = document.getElementById("time").value;
+                        console.log("Nowa rezerwacja: ", name, date, time);
                         const docRef = db.collection("rezerwacje").doc(date);
                         const doc = await docRef.get();
                         if (doc.exists && doc.data().times.includes(time)) {
