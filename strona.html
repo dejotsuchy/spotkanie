@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rezerwacja Terminów</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            max-width: 500px;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        header {
+            background-color: #333;
+            color: #fff;
+            padding: 20px 0;
+        }
+        header img {
+            max-width: 150px;
+        }
+        h2 {
+            color: #333;
+        }
+        label {
+            display: block;
+            margin: 15px 0 5px;
+            text-align: left;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #333;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #555;
+        }
+        .admin-container {
+            display: none;
+        }
+        .time-slots {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        .time-slot {
+            background-color: #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .time-slot.booked {
+            background-color: #ff4d4d;
+            color: white;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="https://www.projekt-wesele.pl/wp-content/uploads/2021/03/projekt-wesele-logo-01.png" alt="Projekt Wesele">
+    </header>
+    
+    <div class="container">
+        <h2>Rejestracja Użytkownika</h2>
+        <form id="registrationForm">
+            <label for="name">Imię i nazwisko:</label>
+            <input type="text" id="name" required>
+            
+            <label for="email">E-mail:</label>
+            <input type="email" id="email" required>
+
+            <label for="weddingDate">Data wesela:</label>
+            <input type="date" id="weddingDate" required>
+
+            <label for="weddingPlace">Miejsce wesela:</label>
+            <input type="text" id="weddingPlace" required>
+
+            <button type="submit">Zarejestruj</button>
+        </form>
+    </div>
+    
+    <div class="container">
+        <h2>Rezerwacja Spotkania</h2>
+        <form id="bookingForm">
+            <label for="date">Data spotkania:</label>
+            <input type="date" id="date" required>
+            
+            <label for="location">Rodzaj spotkania:</label>
+            <select id="location">
+                <option value="online">Online</option>
+                <option value="biuro">W biurze</option>
+            </select>
+            
+            <label for="time">Wybierz godzinę:</label>
+            <div class="time-slots" id="timeSlots"></div>
+            
+            <button type="submit">Zarezerwuj</button>
+        </form>
+        <p id="confirmation" style="color: green; display: none;">Rezerwacja potwierdzona!</p>
+    </div>
+    
+    <div class="container admin-container" id="adminPanel">
+        <h2>Panel Administratora</h2>
+        <button onclick="downloadCSV()">Pobierz listę użytkowników</button>
+    </div>
+    
+    <script>
+        let bookedSlots = {};
+        let registeredUsers = [];
+        const availableTimes = ["10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"];
+        
+        function generateTimeSlots() {
+            const container = document.getElementById("timeSlots");
+            container.innerHTML = "";
+            availableTimes.forEach(time => {
+                const slot = document.createElement("div");
+                slot.classList.add("time-slot");
+                slot.innerText = time;
+                slot.onclick = () => selectTime(time);
+                
+                const selectedDate = document.getElementById("date").value;
+                if (bookedSlots[selectedDate] && bookedSlots[selectedDate].includes(time)) {
+                    slot.classList.add("booked");
+                }
+                
+                container.appendChild(slot);
+            });
+        }
+        
+        function selectTime(time) {
+            document.querySelectorAll(".time-slot").forEach(slot => slot.style.backgroundColor = "#ddd");
+            event.target.style.backgroundColor = "#333";
+            event.target.style.color = "#fff";
+            document.getElementById("bookingForm").setAttribute("data-time", time);
+        }
+        
+        document.getElementById("date").addEventListener("change", generateTimeSlots);
+        
+        document.getElementById("registrationForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            const user = {
+                name: document.getElementById("name").value,
+                email: document.getElementById("email").value,
+                weddingDate: document.getElementById("weddingDate").value,
+                weddingPlace: document.getElementById("weddingPlace").value
+            };
+            registeredUsers.push(user);
+            alert("Rejestracja zakończona sukcesem!");
+        });
+        
+        function downloadCSV() {
+            let csvContent = "Imię i nazwisko,E-mail,Data wesela,Miejsce wesela\n";
+            registeredUsers.forEach(user => {
+                csvContent += `${user.name},${user.email},${user.weddingDate},${user.weddingPlace}\n`;
+            });
+            const blob = new Blob([csvContent], { type: "text/csv" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "zarejestrowani_uzytkownicy.csv";
+            link.click();
+        }
+        
+        if (localStorage.getItem("isAdmin") === "true") {
+            document.getElementById("adminPanel").style.display = "block";
+        }
+    </script>
+</body>
+</html>
