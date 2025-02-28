@@ -17,8 +17,14 @@
         document.addEventListener("DOMContentLoaded", async function () {
             console.log("✅ Ładowanie Firebase...");
             
-            const response = await fetch("/firebase-config.json");
-            const firebaseConfig = await response.json();
+            const firebaseConfig = {
+                apiKey: "TWOJ_API_KEY",
+                authDomain: "projekt-rezerwacja.firebaseapp.com",
+                projectId: "projekt-rezerwacja",
+                storageBucket: "projekt-rezerwacja.appspot.com",
+                messagingSenderId: "118180989579",
+                appId: "1:118180989579:web:xxx"
+            };
 
             if (!firebase.apps.length) {
                 firebase.initializeApp(firebaseConfig);
