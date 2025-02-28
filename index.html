@@ -34,12 +34,19 @@
                 emailjs.init("xqyVbSjeXibISoZml");
                 console.log("EmailJS załadowany poprawnie!");
                 
-                function sendEmailNotification(name, date, time) {
+                function sendEmailNotification(name, email, weddingDate, weddingPlace, services, date, time, message) {
                     console.log("Wysyłanie e-maila...");
                     emailjs.send("service_f8ccgjc", "template_8x51wzj", {
                         from_name: name,
+                        from_email: email,
                         to_name: "Mateusz",
-                        message: `Rezerwacja na ${date} o ${time}`,
+                        message: `Nowa rezerwacja od ${name}:
+Email: ${email}
+Data wesela: ${weddingDate}
+Miejsce wesela: ${weddingPlace}
+Usługodawcy: ${services}
+Rezerwacja na: ${date} o ${time}
+Wiadomość: ${message}`,
                         admin_email: "projektweselelubuskie@gmail.com"
                     }).then(
                         function(response) {
@@ -56,17 +63,22 @@
                     event.preventDefault();
                     try {
                         const name = document.getElementById("name").value;
+                        const email = document.getElementById("email").value;
+                        const weddingDate = document.getElementById("weddingDate").value;
+                        const weddingPlace = document.getElementById("weddingPlace").value;
+                        const services = document.getElementById("services").value;
                         const date = document.getElementById("date").value;
                         const time = document.getElementById("time").value;
-                        console.log("Nowa rezerwacja: ", name, date, time);
+                        const message = document.getElementById("message").value;
+                        console.log("Nowa rezerwacja: ", name, email, weddingDate, weddingPlace, services, date, time, message);
                         const docRef = db.collection("rezerwacje").doc(date);
                         const doc = await docRef.get();
                         if (doc.exists && doc.data().times.includes(time)) {
                             alert("Termin już zajęty!");
                         } else {
-                            await docRef.set({ times: firebase.firestore.FieldValue.arrayUnion({ time, name }) }, { merge: true });
+                            await docRef.set({ times: firebase.firestore.FieldValue.arrayUnion({ time, name, email, weddingDate, weddingPlace, services, message }) }, { merge: true });
                             document.getElementById("confirmation").style.display = "block";
-                            sendEmailNotification(name, date, time);
+                            sendEmailNotification(name, email, weddingDate, weddingPlace, services, date, time, message);
                         }
                     } catch (error) {
                         console.error("Błąd podczas rezerwacji: ", error);
@@ -103,32 +115,6 @@
         header img {
             max-width: 200px;
         }
-        h2 {
-            color: #d4af37;
-        }
-        label {
-            display: block;
-            margin: 15px 0 5px;
-            text-align: left;
-            font-weight: bold;
-        }
-        input, select, button {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #aaa;
-            border-radius: 5px;
-        }
-        button {
-            background-color: #d4af37;
-            color: #fff;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            background-color: #b89030;
-        }
     </style>
 </head>
 <body>
@@ -141,6 +127,16 @@
         <form id="bookingForm">
             <label for="name">Imię i nazwisko:</label>
             <input type="text" id="name" required>
+            <label for="email">E-mail:</label>
+            <input type="email" id="email" required>
+            <label for="weddingDate">Data wesela:</label>
+            <input type="date" id="weddingDate" required>
+            <label for="weddingPlace">Miejsce wesela:</label>
+            <input type="text" id="weddingPlace" required>
+            <label for="services">Usługodawcy:</label>
+            <input type="text" id="services" placeholder="Wpisz usługodawców" required>
+            <label for="message">Dodatkowa wiadomość:</label>
+            <textarea id="message" placeholder="Wpisz dodatkowe informacje"></textarea>
             <label for="date">Data:</label>
             <input type="date" id="date" required>
             <label for="time">Godzina:</label>
