@@ -4,15 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rezerwacja Terminów</title>
-    
+
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    
+
     <!-- Nowa wersja EmailJS -->
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    
+
     <style>
         body { 
             font-family: 'Arial', sans-serif; 
@@ -79,7 +79,7 @@
         document.addEventListener("DOMContentLoaded", function () {
             console.log("Ładowanie Firebase...");
 
-            // Konfiguracja Firebase
+            // ✅ Konfiguracja Firebase
             const firebaseConfig = {
                 apiKey: "API_KEY",  // Wklej poprawny klucz API z Firebase
                 authDomain: "projekt-rezerwacja.firebaseapp.com",
@@ -97,10 +97,10 @@
             emailjs.init("xqyVbSjeXibISoZml");
             console.log("EmailJS załadowany poprawnie!");
 
-            // Ustawienie administratora
+            // ✅ Administrator email
             const adminEmail = "projektweselelubuskie@gmail.com";
 
-            // Obsługa logowania
+            // ✅ Obsługa logowania
             document.getElementById("loginBtn").addEventListener("click", function() {
                 const provider = new firebase.auth.GoogleAuthProvider();
                 firebase.auth().signInWithPopup(provider).then((result) => {
@@ -116,7 +116,7 @@
                 });
             });
 
-            // Sprawdzenie czy użytkownik to administrator
+            // ✅ Sprawdzenie czy użytkownik to administrator
             firebase.auth().onAuthStateChanged((user) => {
                 if (user && user.email === adminEmail) {
                     document.getElementById("adminPanel").style.display = "block";
@@ -129,7 +129,7 @@
                 }
             });
 
-            // Pobieranie dostępnych terminów
+            // ✅ Pobieranie dostępnych terminów
             const availableTimesRef = db.collection("dostepne_terminy");
 
             async function loadAvailableTimes() {
