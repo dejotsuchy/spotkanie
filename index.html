@@ -14,7 +14,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
+        document.addEventListener("DOMContentLoaded", async function () {
             const adminEmail = "projektweselelubuskie@gmail.com";
 
             // Konfiguracja Firebase
@@ -22,110 +22,105 @@
                 apiKey: "API_KEY",
                 authDomain: "projekt-rezerwacja.firebaseapp.com",
                 projectId: "projekt-rezerwacja",
-                storageBucket: "projekt-rezerwacja.firebasestorage.app",
+                storageBucket: "projekt-rezerwacja.appspot.com",
                 messagingSenderId: "118180989579",
                 appId: "1:118180989579:ios:b2d2961d5f8b4b1963628e"
             };
 
-            firebase.initializeApp(firebaseConfig);
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+                console.log("✅ Firebase załadowany poprawnie!");
+            }
+
             const db = firebase.firestore();
-            console.log("Firebase załadowany poprawnie!");
-
-            emailjs.init("xqyVbSjeXibISoZml");
-            console.log("EmailJS załadowany poprawnie!");
-
-            firebase.auth().onAuthStateChanged(function(user) {
-                if (user && user.email === adminEmail) {
-                    document.getElementById("adminPanel").style.display = "block";
-                } else {
-                    document.getElementById("adminPanel").style.display = "none";
-                }
-            });
-
             const availableTimesRef = db.collection("dostepne_terminy");
 
             async function loadAvailableTimes() {
                 const dateSelect = document.getElementById("date");
                 const timeSelect = document.getElementById("time");
+
                 dateSelect.innerHTML = "<option value=''>Wybierz datę</option>";
                 timeSelect.innerHTML = "<option value=''>Wybierz godzinę</option>";
-                
-                const snapshot = await availableTimesRef.get();
-                const dates = {};
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    if (!dates[data.date]) {
-                        dates[data.date] = [];
-                    }
-                    dates[data.date].push(data.time);
-                });
-                
-                Object.keys(dates).forEach(date => {
-                    let option = document.createElement("option");
-                    option.value = date;
-                    option.textContent = date;
-                    dateSelect.appendChild(option);
-                });
-                
-                dateSelect.addEventListener("change", function() {
-                    timeSelect.innerHTML = "<option value=''>Wybierz godzinę</option>";
-                    const selectedDate = this.value;
-                    if (dates[selectedDate]) {
-                        dates[selectedDate].forEach(time => {
-                            let option = document.createElement("option");
-                            option.value = time;
-                            option.textContent = time;
-                            timeSelect.appendChild(option);
-                        });
-                    }
-                });
-            }
-            
-            loadAvailableTimes();
 
-            document.getElementById("adminForm").addEventListener("submit", async function(event) {
-                event.preventDefault();
-                const adminDate = document.getElementById("adminDate").value;
-                const adminTime = document.getElementById("adminTime").value;
-                await availableTimesRef.add({ date: adminDate, time: adminTime });
-                alert("Termin dodany!");
-                loadAvailableTimes();
-            });
+                try {
+                    const snapshot = await availableTimesRef.get();
+                    if (snapshot.empty) {
+                        console.warn("⚠ Brak dostępnych terminów w Firestore!");
+                        dateSelect.innerHTML = "<option value=''>Brak terminów</option>";
+                        return;
+                    }
+
+                    const dates = {};
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (!dates[data.date]) {
+                            dates[data.date] = [];
+                        }
+                        dates[data.date].push(data.time);
+                    });
+
+                    Object.keys(dates).forEach(date => {
+                        let option = document.createElement("option");
+                        option.value = date;
+                        option.textContent = date;
+                        dateSelect.appendChild(option);
+                    });
+
+                    dateSelect.addEventListener("change", function() {
+                        timeSelect.innerHTML = "<option value=''>Wybierz godzinę</option>";
+                        const selectedDate = this.value;
+                        if (dates[selectedDate]) {
+                            dates[selectedDate].forEach(time => {
+                                let option = document.createElement("option");
+                                option.value = time;
+                                option.textContent = time;
+                                timeSelect.appendChild(option);
+                            });
+                        }
+                    });
+
+                } catch (error) {
+                    console.error("❌ Błąd podczas pobierania terminów:", error);
+                    dateSelect.innerHTML = "<option value=''>Błąd ładowania</option>";
+                }
+            }
+
+            loadAvailableTimes();
         });
     </script>
-    
-    <style>
-        body { font-family: 'Arial', sans-serif; text-align: center; background-color: #f4f4f4; color: #333; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 30px auto; padding: 20px; background-color: #ffffff; border-radius: 10px; box-shadow: 0 0 15px rgba(0, 0, 0, 0.1); }
-        input, select, button { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; }
-        button { background-color: #d4af37; color: white; font-size: 16px; cursor: pointer; }
-    </style>
 </head>
 <body>
-    <div class="container" id="adminPanel" style="display: none;">
-        <h2>Dodawanie dostępnych terminów (Administrator)</h2>
-        <form id="adminForm">
-            <input type="date" id="adminDate" required>
-            <input type="time" id="adminTime" required>
-            <button type="submit">Dodaj termin</button>
-        </form>
-    </div>
+    <header>
+        <img src="https://www.projekt-wesele.pl/wp-content/uploads/2021/03/projekt-wesele-logo-01.png" alt="Projekt Wesele">
+    </header>
     
     <div class="container">
         <h2>Rezerwacja Spotkania</h2>
         <form id="bookingForm">
-            <input type="text" id="name" placeholder="Imię i nazwisko" required>
-            <input type="email" id="email" placeholder="E-mail" required>
-            <input type="date" id="weddingDate" placeholder="Data wesela" required>
-            <input type="text" id="weddingLocation" placeholder="Miejsce wesela" required>
-            <input type="text" id="services" placeholder="Usługodawcy (np. DJ, fotograf)" required>
-            <textarea id="message" placeholder="Dodatkowa wiadomość"></textarea>
+            <label for="meetingType">Rodzaj spotkania:</label>
+            <select id="meetingType" required>
+                <option value="online">Online</option>
+                <option value="biuro">W biurze (Zielona Góra)</option>
+            </select>
+            <label for="name">Imię i nazwisko:</label>
+            <input type="text" id="name" required>
+            <label for="email">E-mail:</label>
+            <input type="email" id="email" required>
+            <label for="weddingDate">Data wesela:</label>
+            <input type="date" id="weddingDate" required>
+            <label for="weddingPlace">Miejsce wesela:</label>
+            <input type="text" id="weddingPlace" required>
+            <label for="services">Usługodawcy:</label>
+            <input type="text" id="services" placeholder="Wpisz usługodawców" required>
+            <label for="message">Dodatkowa wiadomość:</label>
+            <textarea id="message" placeholder="Wpisz dodatkowe informacje"></textarea>
             <label for="date">Data:</label>
-            <select id="date" required></select>
+            <input type="date" id="date" required>
             <label for="time">Godzina:</label>
-            <select id="time" required></select>
+            <input type="time" id="time" required>
             <button type="submit">Zarezerwuj</button>
         </form>
+        <p id="confirmation" style="color:green; display:none;">Rezerwacja potwierdzona!</p>
     </div>
 </body>
 </html>
