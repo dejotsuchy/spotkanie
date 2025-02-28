@@ -46,7 +46,8 @@ Data wesela: ${weddingDate}
 Miejsce wesela: ${weddingPlace}
 Usługodawcy: ${services}
 Rezerwacja na: ${date} o ${time}
-Wiadomość: ${message}`,
+Wiadomość: ${message}
+Rodzaj spotkania: ${meetingType}`,
                         admin_email: "projektweselelubuskie@gmail.com"
                     }).then(
                         function(response) {
@@ -70,7 +71,9 @@ Wiadomość: ${message}`,
                         const date = document.getElementById("date").value;
                         const time = document.getElementById("time").value;
                         const message = document.getElementById("message").value;
+                        const meetingType = document.getElementById("meetingType").value;
                         console.log("Nowa rezerwacja: ", name, email, weddingDate, weddingPlace, services, date, time, message);
+                        console.log("Rodzaj spotkania:", meetingType);
                         const docRef = db.collection("rezerwacje").doc(date);
                         const doc = await docRef.get();
                         if (doc.exists && doc.data().times.includes(time)) {
@@ -153,6 +156,11 @@ Wiadomość: ${message}`,
     <div class="container">
         <h2>Rezerwacja Spotkania</h2>
         <form id="bookingForm">
+            <label for="meetingType">Rodzaj spotkania:</label>
+            <select id="meetingType" required>
+                <option value="online">Online</option>
+                <option value="biuro">W biurze (Zielona Góra)</option>
+            </select>
             <label for="name">Imię i nazwisko:</label>
             <input type="text" id="name" required>
             <label for="email">E-mail:</label>
