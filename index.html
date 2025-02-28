@@ -72,9 +72,8 @@ Rodzaj spotkania: ${meetingType}`,
                         const time = document.getElementById("time").value;
                         const message = document.getElementById("message").value;
                         const meetingType = document.getElementById("meetingType").value;
-
                         console.log("Nowa rezerwacja: ", name, email, weddingDate, weddingPlace, services, date, time, message, meetingType);
-
+                        console.log("Rodzaj spotkania:", meetingType);
                         const docRef = db.collection("rezerwacje").doc(date);
                         const doc = await docRef.get();
                         if (doc.exists && doc.data().times.includes(time)) {
