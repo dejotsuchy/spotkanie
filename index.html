@@ -6,37 +6,56 @@
     <title>Rezerwacja Terminów</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
     <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyCA2H6fvyH3qpwbGjQUy3P4VHrx6df9BY8",
-            authDomain: "projekt-rezerwacja.firebaseapp.com",
-            projectId: "projekt-rezerwacja",
-            storageBucket: "projekt-rezerwacja.firebasestorage.app",
-            messagingSenderId: "118180989579",
-            appId: "1:118180989579:ios:b2d2961d5f8b4b1963628e"
-        };
+        document.addEventListener("DOMContentLoaded", function () {
+            const firebaseConfig = {
+                apiKey: "AIzaSyCA2H6fvyH3qpwbGjQUy3P4VHrx6df9BY8",
+                authDomain: "projekt-rezerwacja.firebaseapp.com",
+                projectId: "projekt-rezerwacja",
+                storageBucket: "projekt-rezerwacja.firebasestorage.app",
+                messagingSenderId: "118180989579",
+                appId: "1:118180989579:ios:b2d2961d5f8b4b1963628e"
+            };
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
 
-        emailjs.init("xqyVbSjeXibISoZml");
+            emailjs.init("xqyVbSjeXibISoZml");
 
-        function sendEmailNotification(name, date, time) {
-            emailjs.send("service_ugnyjwi", "template_8x51wzj", {
-                user_name: name,
-                meeting_date: date,
-                meeting_time: time,
-                admin_email: "projektweselelubuskie@gmail.com"
-            }).then(
-                function(response) {
-                    console.log("Email wysłany: ", response.status, response.text);
-                },
-                function(error) {
-                    console.log("Błąd wysyłania emaila: ", error);
+            function sendEmailNotification(name, date, time) {
+                emailjs.send("service_ugnyjwi", "template_8x51wzj", {
+                    user_name: name,
+                    meeting_date: date,
+                    meeting_time: time,
+                    admin_email: "projektweselelubuskie@gmail.com"
+                }).then(
+                    function(response) {
+                        console.log("Email wysłany: ", response.status, response.text);
+                    },
+                    function(error) {
+                        console.log("Błąd wysyłania emaila: ", error);
+                    }
+                );
+            }
+
+            document.getElementById("bookingForm").addEventListener("submit", async function(event) {
+                event.preventDefault();
+                const name = document.getElementById("name").value;
+                const date = document.getElementById("date").value;
+                const time = document.getElementById("time").value;
+                const docRef = db.collection("rezerwacje").doc(date);
+                const doc = await docRef.get();
+                if (doc.exists && doc.data().times.includes(time)) {
+                    alert("Termin już zajęty!");
+                } else {
+                    docRef.set({ times: firebase.firestore.FieldValue.arrayUnion({ time, name }) }, { merge: true });
+                    document.getElementById("confirmation").style.display = "block";
+                    sendEmailNotification(name, date, time);
                 }
-            );
-        }
+            });
+        });
     </script>
     <style>
         body { 
@@ -109,23 +128,5 @@
         </form>
         <p id="confirmation" style="color:green; display:none;">Rezerwacja potwierdzona!</p>
     </div>
-    
-    <script>
-        document.getElementById("bookingForm").addEventListener("submit", async function(event) {
-            event.preventDefault();
-            const name = document.getElementById("name").value;
-            const date = document.getElementById("date").value;
-            const time = document.getElementById("time").value;
-            const docRef = db.collection("rezerwacje").doc(date);
-            const doc = await docRef.get();
-            if (doc.exists && doc.data().times.includes(time)) {
-                alert("Termin już zajęty!");
-            } else {
-                docRef.set({ times: firebase.firestore.FieldValue.arrayUnion({ time, name }) }, { merge: true });
-                document.getElementById("confirmation").style.display = "block";
-                sendEmailNotification(name, date, time);
-            }
-        });
-    </script>
 </body>
 </html>
