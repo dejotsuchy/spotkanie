@@ -10,7 +10,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
-    <!-- Nowa wersja EmailJS -->
+    <!-- EmailJS -->
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
     <style>
@@ -46,6 +46,7 @@
     </style>
 </head>
 <body>
+
     <button id="loginBtn">Zaloguj się</button>
     <button id="logoutBtn" style="display:none;">Wyloguj się</button>
 
@@ -63,7 +64,7 @@
             </form>
         </div>
     </div>
-    
+
     <div class="container">
         <h2>Rezerwacja Spotkania</h2>
         <form id="bookingForm">
@@ -77,47 +78,45 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            console.log("Ładowanie Firebase...");
+            console.log("✅ Ładowanie Firebase...");
 
-            // ✅ Konfiguracja Firebase
+            // 🔥 **Konfiguracja Firebase (Wklej poprawny API Key)**
             const firebaseConfig = {
-                apiKey: "API_KEY",  // Wklej poprawny klucz API z Firebase
+                apiKey: "TWÓJ_POPRAWNY_KLUCZ_API",
                 authDomain: "projekt-rezerwacja.firebaseapp.com",
                 projectId: "projekt-rezerwacja",
-                storageBucket: "projekt-rezerwacja.firebasestorage.app",
+                storageBucket: "projekt-rezerwacja.appspot.com",
                 messagingSenderId: "118180989579",
-                appId: "1:118180989579:ios:b2d2961d5f8b4b1963628e"
+                appId: "1:118180989579:web:dd3e4487c40d0b3863628e"
             };
 
-            // ✅ Inicjalizacja Firebase
-            firebase.initializeApp(firebaseConfig);
+            try {
+                firebase.initializeApp(firebaseConfig);
+                console.log("✅ Firebase załadowany poprawnie!");
+            } catch (error) {
+                console.error("❌ Błąd podczas inicjalizacji Firebase:", error);
+            }
+
             const db = firebase.firestore();
-            console.log("Firebase API Key:", firebaseConfig.apiKey);
-            console.log("Firebase initialized:", firebase.apps.length > 0);
-
-            emailjs.init("xqyVbSjeXibISoZml");
-            console.log("EmailJS załadowany poprawnie!");
-
-            // ✅ Administrator email
             const adminEmail = "projektweselelubuskie@gmail.com";
 
-            // ✅ Obsługa logowania
+            // 🔥 Obsługa logowania
             document.getElementById("loginBtn").addEventListener("click", function() {
                 const provider = new firebase.auth.GoogleAuthProvider();
                 firebase.auth().signInWithPopup(provider).then((result) => {
-                    console.log("Zalogowano:", result.user.email);
+                    console.log("✅ Zalogowano:", result.user.email);
                 }).catch((error) => {
-                    console.error("Błąd logowania:", error);
+                    console.error("❌ Błąd logowania:", error);
                 });
             });
 
             document.getElementById("logoutBtn").addEventListener("click", function() {
                 firebase.auth().signOut().then(() => {
-                    console.log("Wylogowano");
+                    console.log("✅ Wylogowano");
                 });
             });
 
-            // ✅ Sprawdzenie czy użytkownik to administrator
+            // 🔥 Sprawdzenie czy użytkownik to administrator
             firebase.auth().onAuthStateChanged((user) => {
                 if (user && user.email === adminEmail) {
                     document.getElementById("adminPanel").style.display = "block";
@@ -130,16 +129,14 @@
                 }
             });
 
-            // ✅ Pobieranie dostępnych terminów
-            const availableTimesRef = db.collection("dostepne_terminy");
-
+            // 🔥 Pobieranie dostępnych terminów
             async function loadAvailableTimes() {
                 const dateSelect = document.getElementById("date");
                 const timeSelect = document.getElementById("time");
                 dateSelect.innerHTML = "<option value=''>Wybierz datę</option>";
                 timeSelect.innerHTML = "<option value=''>Wybierz godzinę</option>";
-                
-                const snapshot = await availableTimesRef.get();
+
+                const snapshot = await db.collection("dostepne_terminy").get();
                 const dates = {};
                 snapshot.forEach(doc => {
                     const data = doc.data();
@@ -148,14 +145,14 @@
                     }
                     dates[data.date].push(data.time);
                 });
-                
+
                 Object.keys(dates).forEach(date => {
                     let option = document.createElement("option");
                     option.value = date;
                     option.textContent = date;
                     dateSelect.appendChild(option);
                 });
-                
+
                 dateSelect.addEventListener("change", function() {
                     timeSelect.innerHTML = "<option value=''>Wybierz godzinę</option>";
                     const selectedDate = this.value;
@@ -169,17 +166,8 @@
                     }
                 });
             }
-            
-            loadAvailableTimes();
 
-            document.getElementById("adminForm").addEventListener("submit", async function(event) {
-                event.preventDefault();
-                const adminDate = document.getElementById("adminDate").value;
-                const adminTime = document.getElementById("adminTime").value;
-                await availableTimesRef.add({ date: adminDate, time: adminTime });
-                alert("Termin dodany!");
-                loadAvailableTimes();
-            });
+            loadAvailableTimes();
         });
     </script>
 </body>
