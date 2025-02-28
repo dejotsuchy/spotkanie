@@ -34,59 +34,57 @@
                 emailjs.init("xqyVbSjeXibISoZml");
                 console.log("EmailJS załadowany poprawnie!");
                 
-                function sendEmailNotification(name, email, weddingDate, weddingPlace, services, date, time, message, meetingType) {
-                    console.log("Wysyłanie e-maila...");
-                    emailjs.send("service_f8ccgjc", "template_8x51wzj", {
-                        from_name: name,
-                        from_email: email,
-                        to_name: "Mateusz",
-                        message: `Nowa rezerwacja od ${name}:
-Email: ${email}
-Data wesela: ${weddingDate}
-Miejsce wesela: ${weddingPlace}
-Usługodawcy: ${services}
-Rezerwacja na: ${date} o ${time}
-Wiadomość: ${message}
-Rodzaj spotkania: ${meetingType}`,
-                        admin_email: "projektweselelubuskie@gmail.com"
-                    }).then(
-                        function(response) {
-                            console.log("Email wysłany: ", response.status, response.text);
-                        },
-                        function(error) {
-                            console.error("Błąd wysyłania emaila: ", error);
-                            alert("Błąd wysyłania e-maila: " + error.text);
+                const adminEmail = "projektweselelubuskie@gmail.com";
+                const availableTimesRef = db.collection("dostepne_terminy");
+
+                async function loadAvailableTimes() {
+                    const dateSelect = document.getElementById("date");
+                    const timeSelect = document.getElementById("time");
+                    dateSelect.innerHTML = "<option value=''>Wybierz datę</option>";
+                    timeSelect.innerHTML = "<option value=''>Wybierz godzinę</option>";
+                    
+                    const snapshot = await availableTimesRef.get();
+                    const dates = {};
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (!dates[data.date]) {
+                            dates[data.date] = [];
                         }
-                    );
+                        dates[data.date].push(data.time);
+                    });
+                    
+                    Object.keys(dates).forEach(date => {
+                        let option = document.createElement("option");
+                        option.value = date;
+                        option.textContent = date;
+                        dateSelect.appendChild(option);
+                    });
+                    
+                    dateSelect.addEventListener("change", function() {
+                        timeSelect.innerHTML = "<option value=''>Wybierz godzinę</option>";
+                        const selectedDate = this.value;
+                        if (dates[selectedDate]) {
+                            dates[selectedDate].forEach(time => {
+                                let option = document.createElement("option");
+                                option.value = time;
+                                option.textContent = time;
+                                timeSelect.appendChild(option);
+                            });
+                        }
+                    });
                 }
                 
-                document.getElementById("bookingForm").addEventListener("submit", async function(event) {
+                loadAvailableTimes();
+
+                document.getElementById("adminForm").addEventListener("submit", async function(event) {
                     event.preventDefault();
-                    try {
-                        const name = document.getElementById("name").value;
-                        const email = document.getElementById("email").value;
-                        const weddingDate = document.getElementById("weddingDate").value;
-                        const weddingPlace = document.getElementById("weddingPlace").value;
-                        const services = document.getElementById("services").value;
-                        const date = document.getElementById("date").value;
-                        const time = document.getElementById("time").value;
-                        const message = document.getElementById("message").value;
-                        const meetingType = document.getElementById("meetingType").value;
-                        console.log("Nowa rezerwacja: ", name, email, weddingDate, weddingPlace, services, date, time, message, meetingType);
-                        console.log("Rodzaj spotkania:", meetingType);
-                        const docRef = db.collection("rezerwacje").doc(date);
-                        const doc = await docRef.get();
-                        if (doc.exists && doc.data().times.includes(time)) {
-                            alert("Termin już zajęty!");
-                        } else {
-                            await docRef.set({ times: firebase.firestore.FieldValue.arrayUnion({ time, name, email, weddingDate, weddingPlace, services, message, meetingType }) }, { merge: true });
-                            document.getElementById("confirmation").style.display = "block";
-                            sendEmailNotification(name, email, weddingDate, weddingPlace, services, date, time, message, meetingType);
-                        }
-                    } catch (error) {
-                        console.error("Błąd podczas rezerwacji: ", error);
-                    }
+                    const adminDate = document.getElementById("adminDate").value;
+                    const adminTime = document.getElementById("adminTime").value;
+                    await availableTimesRef.add({ date: adminDate, time: adminTime });
+                    alert("Termin dodany!");
+                    loadAvailableTimes();
                 });
+                
             } catch (error) {
                 console.error("Błąd podczas ładowania Firebase: ", error);
             }
@@ -110,24 +108,7 @@ Rodzaj spotkania: ${meetingType}`,
             border-radius: 10px;
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
         }
-        header {
-            background-color: #333;
-            color: #fff;
-            padding: 20px 0;
-        }
-        header img {
-            max-width: 200px;
-        }
-        form {
-            display: flex;
-            flex-direction: column;
-        }
-        label {
-            margin-top: 10px;
-            font-weight: bold;
-            text-align: left;
-        }
-        input, textarea, select {
+        input, select, button {
             width: 100%;
             padding: 10px;
             margin-bottom: 10px;
@@ -137,49 +118,30 @@ Rodzaj spotkania: ${meetingType}`,
         button {
             background-color: #d4af37;
             color: white;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
             font-size: 16px;
-        }
-        button:hover {
-            background-color: #b89030;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <header>
-        <img src="https://www.projekt-wesele.pl/wp-content/uploads/2021/03/projekt-wesele-logo-01.png" alt="Projekt Wesele">
-    </header>
+    <div class="container">
+        <h2>Dodawanie dostępnych terminów (Administrator)</h2>
+        <form id="adminForm">
+            <input type="date" id="adminDate" required>
+            <input type="time" id="adminTime" required>
+            <button type="submit">Dodaj termin</button>
+        </form>
+    </div>
     
     <div class="container">
         <h2>Rezerwacja Spotkania</h2>
         <form id="bookingForm">
-            <label for="meetingType">Rodzaj spotkania:</label>
-            <select id="meetingType" required>
-                <option value="online">Online</option>
-                <option value="biuro">W biurze (Zielona Góra)</option>
-            </select>
-            <label for="name">Imię i nazwisko:</label>
-            <input type="text" id="name" required>
-            <label for="email">E-mail:</label>
-            <input type="email" id="email" required>
-            <label for="weddingDate">Data wesela:</label>
-            <input type="date" id="weddingDate" required>
-            <label for="weddingPlace">Miejsce wesela:</label>
-            <input type="text" id="weddingPlace" required>
-            <label for="services">Usługodawcy:</label>
-            <input type="text" id="services" placeholder="Wpisz usługodawców" required>
-            <label for="message">Dodatkowa wiadomość:</label>
-            <textarea id="message" placeholder="Wpisz dodatkowe informacje"></textarea>
             <label for="date">Data:</label>
-            <input type="date" id="date" required>
+            <select id="date" required></select>
             <label for="time">Godzina:</label>
-            <input type="time" id="time" required>
+            <select id="time" required></select>
             <button type="submit">Zarezerwuj</button>
         </form>
-        <p id="confirmation" style="color:green; display:none;">Rezerwacja potwierdzona!</p>
     </div>
 </body>
 </html>
