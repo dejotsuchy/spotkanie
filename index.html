@@ -7,120 +7,11 @@
     
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    document.getElementById("loginBtn").addEventListener("click", function() {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        firebase.auth().signInWithPopup(provider).then((result) => {
-            console.log("Zalogowano:", result.user.email);
-        }).catch((error) => {
-            console.error("Błąd logowania:", error);
-        });
-    });
-
-    document.getElementById("logoutBtn").addEventListener("click", function() {
-        firebase.auth().signOut().then(() => {
-            console.log("Wylogowano");
-        });
-    });
-
-    firebase.auth().onAuthStateChanged((user) => {
-        if (user && user.email === "projektweselelubuskie@gmail.com") {
-            document.getElementById("adminPanel").style.display = "block";
-            document.getElementById("loginBtn").style.display = "none";
-            document.getElementById("logoutBtn").style.display = "block";
-        } else {
-            document.getElementById("adminPanel").style.display = "none";
-        }
-    });
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     
     <!-- Nowa wersja EmailJS -->
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            firebase.auth().onAuthStateChanged(function(user) {
-                if (user && user.email === adminEmail) {
-                    document.getElementById("adminPanel").style.display = "block";
-                }
-            });
-            try {
-                console.log("Ładowanie Firebase...");
-                
-                const firebaseConfig = {
-                    apiKey: "API_KEY",
-                    authDomain: "projekt-rezerwacja.firebaseapp.com",
-                    projectId: "projekt-rezerwacja",
-                    storageBucket: "projekt-rezerwacja.firebasestorage.app",
-                    messagingSenderId: "118180989579",
-                    appId: "1:118180989579:ios:b2d2961d5f8b4b1963628e"
-                };
-
-                firebase.initializeApp(firebaseConfig);
-            console.log("Firebase API Key:", firebaseConfig.apiKey);
-            console.log("Firebase initialized:", firebase.apps.length > 0);
-                const db = firebase.firestore();
-                console.log("Firebase załadowany poprawnie!", firebase);
-
-                emailjs.init("xqyVbSjeXibISoZml");
-                console.log("EmailJS załadowany poprawnie!");
-                
-                const adminEmail = "projektweselelubuskie@gmail.com";
-                const availableTimesRef = db.collection("dostepne_terminy");
-
-                async function loadAvailableTimes() {
-                    const dateSelect = document.getElementById("date");
-                    const timeSelect = document.getElementById("time");
-                    dateSelect.innerHTML = "<option value=''>Wybierz datę</option>";
-                    timeSelect.innerHTML = "<option value=''>Wybierz godzinę</option>";
-                    
-                    const snapshot = await availableTimesRef.get();
-                    const dates = {};
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        if (!dates[data.date]) {
-                            dates[data.date] = [];
-                        }
-                        dates[data.date].push(data.time);
-                    });
-                    
-                    Object.keys(dates).forEach(date => {
-                        let option = document.createElement("option");
-                        option.value = date;
-                        option.textContent = date;
-                        dateSelect.appendChild(option);
-                    });
-                    
-                    dateSelect.addEventListener("change", function() {
-                        timeSelect.innerHTML = "<option value=''>Wybierz godzinę</option>";
-                        const selectedDate = this.value;
-                        if (dates[selectedDate]) {
-                            dates[selectedDate].forEach(time => {
-                                let option = document.createElement("option");
-                                option.value = time;
-                                option.textContent = time;
-                                timeSelect.appendChild(option);
-                            });
-                        }
-                    });
-                }
-                
-                loadAvailableTimes();
-
-                document.getElementById("adminForm").addEventListener("submit", async function(event) {
-                    event.preventDefault();
-                    const adminDate = document.getElementById("adminDate").value;
-                    const adminTime = document.getElementById("adminTime").value;
-                    await availableTimesRef.add({ date: adminDate, time: adminTime });
-                    alert("Termin dodany!");
-                    loadAvailableTimes();
-                });
-                
-            } catch (error) {
-                console.error("Błąd podczas ładowania Firebase: ", error);
-            }
-        });
-    </script>
     
     <style>
         body { 
@@ -160,15 +51,17 @@
 
     <div class="container">
         <header style='text-align: center; padding: 20px;'>
-        <img src="https://www.projekt-wesele.pl/wp-content/uploads/2021/03/projekt-wesele-logo-01.png" alt="Projekt Wesele" style='max-width: 200px;'>
-    </header>
+            <img src="https://www.projekt-wesele.pl/wp-content/uploads/2021/03/projekt-wesele-logo-01.png" alt="Projekt Wesele" style='max-width: 200px;'>
+        </header>
+
         <div id="adminPanel" style="display: none;">
-        <form id="adminForm">
-            <input type="date" id="adminDate" required>
-            <input type="time" id="adminTime" required>
-            <button type="submit">Dodaj termin</button>
+            <h2>Dodawanie dostępnych terminów (Administrator)</h2>
+            <form id="adminForm">
+                <input type="date" id="adminDate" required>
+                <input type="time" id="adminTime" required>
+                <button type="submit">Dodaj termin</button>
+            </form>
         </div>
-        </form>
     </div>
     
     <div class="container">
@@ -181,5 +74,112 @@
             <button type="submit">Zarezerwuj</button>
         </form>
     </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            console.log("Ładowanie Firebase...");
+
+            // Konfiguracja Firebase
+            const firebaseConfig = {
+                apiKey: "API_KEY",  // Wklej poprawny klucz API z Firebase
+                authDomain: "projekt-rezerwacja.firebaseapp.com",
+                projectId: "projekt-rezerwacja",
+                storageBucket: "projekt-rezerwacja.firebasestorage.app",
+                messagingSenderId: "118180989579",
+                appId: "1:118180989579:ios:b2d2961d5f8b4b1963628e"
+            };
+
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
+            console.log("Firebase API Key:", firebaseConfig.apiKey);
+            console.log("Firebase initialized:", firebase.apps.length > 0);
+
+            emailjs.init("xqyVbSjeXibISoZml");
+            console.log("EmailJS załadowany poprawnie!");
+
+            // Ustawienie administratora
+            const adminEmail = "projektweselelubuskie@gmail.com";
+
+            // Obsługa logowania
+            document.getElementById("loginBtn").addEventListener("click", function() {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                firebase.auth().signInWithPopup(provider).then((result) => {
+                    console.log("Zalogowano:", result.user.email);
+                }).catch((error) => {
+                    console.error("Błąd logowania:", error);
+                });
+            });
+
+            document.getElementById("logoutBtn").addEventListener("click", function() {
+                firebase.auth().signOut().then(() => {
+                    console.log("Wylogowano");
+                });
+            });
+
+            // Sprawdzenie czy użytkownik to administrator
+            firebase.auth().onAuthStateChanged((user) => {
+                if (user && user.email === adminEmail) {
+                    document.getElementById("adminPanel").style.display = "block";
+                    document.getElementById("loginBtn").style.display = "none";
+                    document.getElementById("logoutBtn").style.display = "block";
+                } else {
+                    document.getElementById("adminPanel").style.display = "none";
+                    document.getElementById("loginBtn").style.display = "block";
+                    document.getElementById("logoutBtn").style.display = "none";
+                }
+            });
+
+            // Pobieranie dostępnych terminów
+            const availableTimesRef = db.collection("dostepne_terminy");
+
+            async function loadAvailableTimes() {
+                const dateSelect = document.getElementById("date");
+                const timeSelect = document.getElementById("time");
+                dateSelect.innerHTML = "<option value=''>Wybierz datę</option>";
+                timeSelect.innerHTML = "<option value=''>Wybierz godzinę</option>";
+                
+                const snapshot = await availableTimesRef.get();
+                const dates = {};
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (!dates[data.date]) {
+                        dates[data.date] = [];
+                    }
+                    dates[data.date].push(data.time);
+                });
+                
+                Object.keys(dates).forEach(date => {
+                    let option = document.createElement("option");
+                    option.value = date;
+                    option.textContent = date;
+                    dateSelect.appendChild(option);
+                });
+                
+                dateSelect.addEventListener("change", function() {
+                    timeSelect.innerHTML = "<option value=''>Wybierz godzinę</option>";
+                    const selectedDate = this.value;
+                    if (dates[selectedDate]) {
+                        dates[selectedDate].forEach(time => {
+                            let option = document.createElement("option");
+                            option.value = time;
+                            option.textContent = time;
+                            timeSelect.appendChild(option);
+                        });
+                    }
+                });
+            }
+            
+            loadAvailableTimes();
+
+            document.getElementById("adminForm").addEventListener("submit", async function(event) {
+                event.preventDefault();
+                const adminDate = document.getElementById("adminDate").value;
+                const adminTime = document.getElementById("adminTime").value;
+                await availableTimesRef.add({ date: adminDate, time: adminTime });
+                alert("Termin dodany!");
+                loadAvailableTimes();
+            });
+        });
+    </script>
 </body>
 </html>
