@@ -14,20 +14,23 @@
     
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            // Firebase konfiguracja
+            // Konfiguracja Firebase
             const firebaseConfig = {
-                apiKey: "AIzaSyAeWykrY_aL427Q-aFLOs-K0GOBgmGhEgs",
-                authDomain: "projekt-rezerwacja.firebaseapp.com",
-                projectId: "projekt-rezerwacja",
-                storageBucket: "projekt-rezerwacja.appspot.com",
-                messagingSenderId: "118180989579",
-                appId: "1:118180989579:web:dd3e4487c40d0b3863628e",
-                measurementId: "G-KBZ1VVJ9QH"
+                apiKey: "YOUR_FIREBASE_API_KEY",
+                authDomain: "YOUR_FIREBASE_AUTH_DOMAIN",
+                projectId: "YOUR_FIREBASE_PROJECT_ID",
+                storageBucket: "YOUR_FIREBASE_STORAGE_BUCKET",
+                messagingSenderId: "YOUR_FIREBASE_MESSAGING_SENDER_ID",
+                appId: "YOUR_FIREBASE_APP_ID",
+                measurementId: "YOUR_FIREBASE_MEASUREMENT_ID"
             };
             firebase.initializeApp(firebaseConfig);
             const db = firebase.firestore();
+
+            // Inicjalizacja EmailJS
             emailjs.init("xqyVbSjeXibISoZml");
 
+            // Funkcja dzieląca czas na godzinne sloty
             function splitIntoHourlySlots(date, startTime, endTime) {
                 let slots = [];
                 let start = new Date(`${date}T${startTime}`);
@@ -50,6 +53,7 @@
                 return slots;
             }
 
+            // Obsługa formularza administratora
             document.getElementById("adminForm").addEventListener("submit", function(event) {
                 event.preventDefault();
                 const date = document.getElementById("adminDate").value;
@@ -67,6 +71,7 @@
                 });
             });
 
+            // Ładowanie dostępnych terminów
             function loadAvailableSlots() {
                 db.collection("availableSlots").where("booked", "==", false).onSnapshot(snapshot => {
                     const slotsContainer = document.getElementById("availableSlots");
@@ -81,6 +86,57 @@
                 });
             }
             loadAvailableSlots();
+
+            // Obsługa formularza rezerwacji
+            document.getElementById("bookingForm").addEventListener("submit", function(event) {
+                event.preventDefault();
+
+                // Pobranie wartości z formularza
+                const meetingType = document.getElementById("meetingType").value;
+                const name = document.getElementById("name").value;
+                const email = document.getElementById("email").value;
+                const weddingDate = document.getElementById("weddingDate").value;
+                const weddingPlace = document.getElementById("weddingPlace").value;
+                const services = document.getElementById("services").value;
+                const message = document.getElementById("message").value;
+                const slotId = document.getElementById("availableSlots").value;
+
+                // Pobranie wybranego slotu z Firestore
+                db.collection("availableSlots").doc(slotId).get().then(doc => {
+                    if (doc.exists) {
+                        const slot = doc.data();
+
+                        // Przygotowanie parametrów dla EmailJS
+                        const templateParams = {
+                            to_email: "projektweselelubuskie@gmail.com",
+                            from_name: name,
+                            from_email: email,
+                            meeting_type: meetingType,
+                            wedding_date: weddingDate,
+                            wedding_place: weddingPlace,
+                            services: services,
+                            message: message,
+                            reservation_date: slot.date,
+                            reservation_start_time: slot.startTime,
+                            reservation_end_time: slot.endTime
+                        };
+
+                        // Wysłanie e-maila za pomocą EmailJS
+                        emailjs.send('service_f8ccgjc', 'template_8x51wzj', templateParams)
+                            .then(function(response) {
+                                alert('Rezerwacja została pomyślnie wysłana!');
+                                // Zaktualizuj status slotu na "booked"
+                                db.collection("availableSlots").doc(slotId).update({ booked: true });
+                            }, function(error) {
+                                alert('Wystąpił błąd podczas wysyłania rezerwacji: ' + JSON.stringify(error));
+                            });
+                    } else {
+                        alert("Wybrany termin nie jest już dostępny.");
+                    }
+                }).catch(function(error) {
+                    console.error("Błąd podczas pobierania terminu: ", error);
+                });
+            });
         });
     </script>
     
@@ -114,58 +170,6 @@
             margin-bottom: 10px;
             border: 1px solid #d4af37;
             border-radius: 5px;
-            background-color: #000;
-            color: #d4af37;
-        }
-        button {
-            background-color: #d4af37;
-            color: white;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h2>Dodawanie Dostępnych Terminów</h2>
-        <form id="adminForm">
-            <label>Data:</label>
-            <input type="date" id="adminDate" required>
-            <label>Godzina początkowa:</label>
-            <input type="time" id="startTime" required>
-            <label>Godzina końcowa:</label>
-            <input type="time" id="endTime" required>
-            <button type="submit">Dodaj dostępność</button>
-        </form>
-    </div>
-    
-    <div class="container">
-        <h2>Rezerwacja Spotkania</h2>
-        <form id="bookingForm">
-            <label for="meetingType">Rodzaj spotkania:</label>
-            <select id="meetingType" required>
-                <option value="online">Online</option>
-                <option value="biuro">W biurze</option>
-            </select>
-            <label for="name">Imię i nazwisko:</label>
-            <input type="text" id="name" required>
-            <label for="email">E-mail:</label>
-            <input type="email" id="email" required>
-            <label for="weddingDate">Data wesela:</label>
-            <input type="date" id="weddingDate" required>
-            <label for="weddingPlace">Miejsce wesela:</label>
-            <input type="text" id="weddingPlace" required>
-            <label for="services">Usługodawcy:</label>
-            <input type="text" id="services" placeholder="Wpisz usługodawców" required>
-            <label for="message">Dodatkowa wiadomość:</label>
-            <textarea id="message" placeholder="Wpisz dodatkowe informacje"></textarea>
-            <label for="availableSlots">Wybierz dostępny termin:</label>
-            <select id="availableSlots" required></select>
-            <button type="submit">Zarezerwuj</button>
-        </form>
-    </div>
-</body>
-</html>
+            background
+::contentReference[oaicite:0]{index=0}
+ 
