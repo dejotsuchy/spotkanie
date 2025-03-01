@@ -26,6 +26,9 @@
             firebase.initializeApp(firebaseConfig);
             const db = firebase.firestore();
             console.log("Firebase załadowany poprawnie!");
+            
+            emailjs.init("xqyVbSjeXibISoZml");
+            console.log("EmailJS załadowany poprawnie!");
 
             document.getElementById("adminForm").addEventListener("submit", async function(event) {
                 event.preventDefault();
@@ -72,6 +75,38 @@
                 });
             }
             loadAvailableTimes();
+
+            document.getElementById("bookingForm").addEventListener("submit", async function(event) {
+                event.preventDefault();
+                const date = document.getElementById("date").value;
+                const time = document.getElementById("time").value;
+                const email = document.getElementById("email").value;
+                const name = document.getElementById("name").value;
+                const meetingType = document.getElementById("meetingType").value;
+                
+                if (!date || !time || !email || !name) {
+                    alert("Proszę wypełnić wszystkie pola!");
+                    return;
+                }
+                
+                await db.collection("rezerwacje").add({ date, time, email, name, meetingType });
+                alert("Rezerwacja potwierdzona!");
+
+                emailjs.send("service_f8ccgjc", "template_8x51wzj", {
+                    from_name: name,
+                    from_email: email,
+                    message: `Nowa rezerwacja: ${date} o ${time} - ${meetingType}`,
+                    to_name: "Mateusz",
+                    admin_email: "projektweselelubuskie@gmail.com"
+                }).then(
+                    function(response) {
+                        console.log("Email wysłany: ", response.status, response.text);
+                    },
+                    function(error) {
+                        console.error("Błąd wysyłania emaila: ", error);
+                    }
+                );
+            });
         });
     </script>
     
@@ -104,6 +139,15 @@
     <div class="container">
         <h2>Rezerwacja Spotkania</h2>
         <form id="bookingForm">
+            <label>Imię i nazwisko:</label>
+            <input type="text" id="name" required>
+            <label>Email:</label>
+            <input type="email" id="email" required>
+            <label>Rodzaj spotkania:</label>
+            <select id="meetingType" required>
+                <option value="online">Online</option>
+                <option value="biuro">W biurze (Zielona Góra)</option>
+            </select>
             <label>Data:</label>
             <select id="date" required></select>
             <label>Godzina:</label>
