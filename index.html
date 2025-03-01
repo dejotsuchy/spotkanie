@@ -29,23 +29,7 @@
             
             emailjs.init("xqyVbSjeXibISoZml");
 
-            function splitIntoHourlySlots(date, startTime, endTime) {
-                let slots = [];
-                let start = new Date(`${date}T${startTime}`);
-                let end = new Date(`${date}T${endTime}`);
-                
-                while (start < end) {
-                    let nextHour = new Date(start);
-                    nextHour.setHours(nextHour.getHours() + 1);
-                    if (nextHour > end) break;
-                    
-                    slots.push({ date: date, startTime: start.toTimeString().substring(0, 5), endTime: nextHour.toTimeString().substring(0, 5), booked: false });
-                    start = nextHour;
-                }
-                return slots;
-            }
-
-            document.getElementById("bookingForm").addEventListener("submit", function(event) {
+            document.getElementById("bookingForm").addEventListener("submit", async function(event) {
                 event.preventDefault();
                 
                 const name = document.getElementById("name").value;
@@ -56,8 +40,9 @@
                 const message = document.getElementById("message").value;
                 const selectedSlot = document.getElementById("availableSlots").value;
                 
-                const slotRef = db.collection("availableSlots").doc(selectedSlot);
-                slotRef.update({ booked: true }).then(() => {
+                try {
+                    const slotRef = db.collection("availableSlots").doc(selectedSlot);
+                    await slotRef.update({ booked: true });
                     alert("Rezerwacja zakończona sukcesem!");
                     
                     const emailParams = {
@@ -69,13 +54,12 @@
                         message: message
                     };
                     
-                    emailjs.send("service_f8ccgjc", "template_8x51wzj", emailParams)
-                        .then(() => {
-                            alert("Potwierdzenie zostało wysłane na e-mail!");
-                        }, (error) => {
-                            console.log("Błąd EmailJS:", error);
-                        });
-                });
+                    await emailjs.send("service_f8ccgjc", "template_8x51wzj", emailParams);
+                    alert("Potwierdzenie zostało wysłane na e-mail!");
+                } catch (error) {
+                    console.error("Błąd podczas rezerwacji:", error);
+                    alert("Wystąpił błąd. Spróbuj ponownie później.");
+                }
             });
         });
     </script>
