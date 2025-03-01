@@ -8,43 +8,84 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     
-    <!-- Nowa wersja EmailJS -->
+    <!-- EmailJS -->
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            try {
-                console.log("Ładowanie Firebase...");
+            // Firebase konfiguracja
+            const firebaseConfig = {
+                apiKey: "AIzaSyAeWykrY_aL427Q-aFLOs-K0GOBgmGhEgs",
+                authDomain: "projekt-rezerwacja.firebaseapp.com",
+                projectId: "projekt-rezerwacja",
+                storageBucket: "projekt-rezerwacja.appspot.com",
+                messagingSenderId: "118180989579",
+                appId: "1:118180989579:web:dd3e4487c40d0b3863628e",
+                measurementId: "G-KBZ1VVJ9QH"
+            };
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
+            emailjs.init("xqyVbSjeXibISoZml");
+
+            // Dodawanie dostępnych terminów
+            document.getElementById("adminForm").addEventListener("submit", function(event) {
+                event.preventDefault();
+                const date = document.getElementById("adminDate").value;
+                const startTime = document.getElementById("startTime").value;
+                const endTime = document.getElementById("endTime").value;
                 
-                const firebaseConfig = {
-                    apiKey: "API_KEY",
-                    authDomain: "projekt-rezerwacja.firebaseapp.com",
-                    projectId: "projekt-rezerwacja",
-                    storageBucket: "projekt-rezerwacja",
-                    messagingSenderId: "118180989579",
-                    appId: "1:118180989579:ios:b2d2961d5f8b4b1963628e"
-                };
+                db.collection("availableSlots").add({
+                    date: date,
+                    startTime: startTime,
+                    endTime: endTime,
+                    booked: false
+                }).then(() => {
+                    alert("Dostępny termin został dodany.");
+                });
+            });
 
-                firebase.initializeApp(firebaseConfig);
-                const db = firebase.firestore();
-                console.log("Firebase załadowany poprawnie!", firebase);
-
-                emailjs.init("xqyVbSjeXibISoZml");
-                console.log("EmailJS załadowany poprawnie!");
-            } catch (error) {
-                console.error("Błąd podczas ładowania Firebase: ", error);
+            // Pobieranie dostępnych terminów
+            function loadAvailableSlots() {
+                db.collection("availableSlots").where("booked", "==", false).onSnapshot(snapshot => {
+                    const slotsContainer = document.getElementById("availableSlots");
+                    slotsContainer.innerHTML = "";
+                    snapshot.forEach(doc => {
+                        const slot = doc.data();
+                        const option = document.createElement("option");
+                        option.value = `${doc.id}`;
+                        option.textContent = `${slot.date} - ${slot.startTime} do ${slot.endTime}`;
+                        slotsContainer.appendChild(option);
+                    });
+                });
             }
+            loadAvailableSlots();
+
+            // Rezerwacja terminu
+            document.getElementById("bookingForm").addEventListener("submit", function(event) {
+                event.preventDefault();
+                const name = document.getElementById("name").value;
+                const email = document.getElementById("email").value;
+                const slotId = document.getElementById("availableSlots").value;
+                
+                db.collection("availableSlots").doc(slotId).update({ booked: true }).then(() => {
+                    emailjs.send("service_f8ccgjc", "template_8x51wzj", {
+                        user_name: name,
+                        user_email: email
+                    }).then(() => {
+                        alert("Rezerwacja potwierdzona! Powiadomienie zostało wysłane.");
+                    });
+                });
+            });
         });
     </script>
     
     <style>
-        body { 
-            font-family: 'Arial', sans-serif; 
-            text-align: center; 
-            background-color: #121212; 
-            color: #d4af37; 
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            background-color: #121212;
+            color: #d4af37;
             margin: 0;
             padding: 0;
         }
@@ -56,25 +97,14 @@
             border-radius: 10px;
             box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
         }
-        header {
-            background-color: #000;
-            color: #fff;
-            padding: 20px 0;
-        }
-        header img {
-            max-width: 200px;
-        }
-        form {
-            display: flex;
-            flex-direction: column;
-        }
         label {
+            display: block;
             margin-top: 10px;
             font-weight: bold;
             text-align: left;
             color: #fff;
         }
-        input, textarea, select {
+        input, select, button {
             width: 100%;
             padding: 10px;
             margin-bottom: 10px;
@@ -92,28 +122,18 @@
             cursor: pointer;
             font-size: 16px;
         }
-        button:hover {
-            background-color: #b89030;
-        }
     </style>
 </head>
 <body>
-    <header>
-        <img src="https://www.projekt-wesele.pl/wp-content/uploads/2021/03/projekt-wesele-logo-01.png" alt="Projekt Wesele">
-    </header>
-    
     <div class="container">
         <h2>Dodawanie Dostępnych Terminów</h2>
         <form id="adminForm">
-            <label for="adminDate">Data:</label>
-            <input type="date" id="adminDate" name="adminDate" required>
-            
-            <label for="startTime">Godzina początkowa:</label>
-            <input type="time" id="startTime" name="startTime" required>
-            
-            <label for="endTime">Godzina końcowa:</label>
-            <input type="time" id="endTime" name="endTime" required>
-            
+            <label>Data:</label>
+            <input type="date" id="adminDate" required>
+            <label>Godzina początkowa:</label>
+            <input type="time" id="startTime" required>
+            <label>Godzina końcowa:</label>
+            <input type="time" id="endTime" required>
             <button type="submit">Dodaj dostępność</button>
         </form>
     </div>
@@ -121,36 +141,14 @@
     <div class="container">
         <h2>Rezerwacja Spotkania</h2>
         <form id="bookingForm">
-            <label for="meetingType">Rodzaj spotkania:</label>
-            <select id="meetingType" name="meetingType" required>
-                <option value="online">Online</option>
-                <option value="biuro">W biurze (Zielona Góra)</option>
-            </select>
-            
             <label for="name">Imię i nazwisko:</label>
-            <input type="text" id="name" name="name" required>
-            
+            <input type="text" id="name" required>
             <label for="email">E-mail:</label>
-            <input type="email" id="email" name="email" required>
-            
-            <label for="weddingDate">Data wesela:</label>
-            <input type="date" id="weddingDate" name="weddingDate" required>
-            
-            <label for="weddingPlace">Miejsce wesela:</label>
-            <input type="text" id="weddingPlace" name="weddingPlace" required>
-            
-            <label for="services">Usługodawcy:</label>
-            <input type="text" id="services" name="services" placeholder="Wpisz usługodawców" required>
-            
-            <label for="message">Dodatkowa wiadomość:</label>
-            <textarea id="message" name="message" placeholder="Wpisz dodatkowe informacje"></textarea>
-            
-            <label for="meetingDateTime">Data i godzina spotkania:</label>
-            <input type="datetime-local" id="meetingDateTime" name="meetingDateTime" required>
-            
+            <input type="email" id="email" required>
+            <label for="availableSlots">Wybierz dostępny termin:</label>
+            <select id="availableSlots" required></select>
             <button type="submit">Zarezerwuj</button>
         </form>
-        <p id="confirmation" style="color:green; display:none;">Rezerwacja potwierdzona!</p>
     </div>
 </body>
 </html>
