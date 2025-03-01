@@ -26,106 +26,66 @@
             };
             firebase.initializeApp(firebaseConfig);
             const db = firebase.firestore();
+            
             emailjs.init("xqyVbSjeXibISoZml");
 
             function splitIntoHourlySlots(date, startTime, endTime) {
                 let slots = [];
                 let start = new Date(`${date}T${startTime}`);
                 let end = new Date(`${date}T${endTime}`);
-
+                
                 while (start < end) {
                     let nextHour = new Date(start);
                     nextHour.setHours(nextHour.getHours() + 1);
                     if (nextHour > end) break;
-
-                    slots.push({
-                        date: date,
-                        startTime: start.toTimeString().substring(0, 5),
-                        endTime: nextHour.toTimeString().substring(0, 5),
-                        booked: false
-                    });
-
+                    
+                    slots.push({ date: date, startTime: start.toTimeString().substring(0, 5), endTime: nextHour.toTimeString().substring(0, 5), booked: false });
                     start = nextHour;
                 }
                 return slots;
             }
 
-            document.getElementById("adminForm").addEventListener("submit", function(event) {
+            document.getElementById("bookingForm").addEventListener("submit", function(event) {
                 event.preventDefault();
-                const date = document.getElementById("adminDate").value;
-                const startTime = document.getElementById("startTime").value;
-                const endTime = document.getElementById("endTime").value;
-                const slots = splitIntoHourlySlots(date, startTime, endTime);
                 
-                let batch = db.batch();
-                slots.forEach(slot => {
-                    let docRef = db.collection("availableSlots").doc();
-                    batch.set(docRef, slot);
-                });
-                batch.commit().then(() => {
-                    alert("Dostępne godziny zostały dodane.");
+                const name = document.getElementById("name").value;
+                const email = document.getElementById("email").value;
+                const weddingDate = document.getElementById("weddingDate").value;
+                const weddingPlace = document.getElementById("weddingPlace").value;
+                const services = document.getElementById("services").value;
+                const message = document.getElementById("message").value;
+                const selectedSlot = document.getElementById("availableSlots").value;
+                
+                const slotRef = db.collection("availableSlots").doc(selectedSlot);
+                slotRef.update({ booked: true }).then(() => {
+                    alert("Rezerwacja zakończona sukcesem!");
+                    
+                    const emailParams = {
+                        name: name,
+                        email: email,
+                        wedding_date: weddingDate,
+                        wedding_place: weddingPlace,
+                        services: services,
+                        message: message
+                    };
+                    
+                    emailjs.send("service_f8ccgjc", "template_8x51wzj", emailParams)
+                        .then(() => {
+                            alert("Potwierdzenie zostało wysłane na e-mail!");
+                        }, (error) => {
+                            console.log("Błąd EmailJS:", error);
+                        });
                 });
             });
-
-            function loadAvailableSlots() {
-                db.collection("availableSlots").where("booked", "==", false).onSnapshot(snapshot => {
-                    const slotsContainer = document.getElementById("availableSlots");
-                    slotsContainer.innerHTML = "";
-                    snapshot.forEach(doc => {
-                        const slot = doc.data();
-                        const option = document.createElement("option");
-                        option.value = doc.id;
-                        option.textContent = `${slot.date} - ${slot.startTime} do ${slot.endTime}`;
-                        slotsContainer.appendChild(option);
-                    });
-                });
-            }
-            loadAvailableSlots();
         });
     </script>
     
     <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            text-align: center;
-            background-color: #121212;
-            color: #d4af37;
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            max-width: 600px;
-            margin: 30px auto;
-            padding: 20px;
-            background-color: #1e1e1e;
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
-        }
-        label {
-            display: block;
-            margin-top: 10px;
-            font-weight: bold;
-            text-align: left;
-            color: #fff;
-        }
-        input, select, button, textarea {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #d4af37;
-            border-radius: 5px;
-            background-color: #000;
-            color: #d4af37;
-        }
-        button {
-            background-color: #d4af37;
-            color: white;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
+        body { font-family: 'Arial', sans-serif; text-align: center; background-color: #121212; color: #d4af37; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 30px auto; padding: 20px; background-color: #1e1e1e; border-radius: 10px; box-shadow: 0 0 15px rgba(212, 175, 55, 0.5); }
+        label { display: block; margin-top: 10px; font-weight: bold; text-align: left; color: #fff; }
+        input, select, button, textarea { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #d4af37; border-radius: 5px; background-color: #000; color: #d4af37; }
+        button { background-color: #d4af37; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
     </style>
 </head>
 <body>
