@@ -22,7 +22,7 @@
                     apiKey: "API_KEY",
                     authDomain: "projekt-rezerwacja.firebaseapp.com",
                     projectId: "projekt-rezerwacja",
-                    storageBucket: "projekt-rezerwacja.appspot.com",
+                    storageBucket: "projekt-rezerwacja",
                     messagingSenderId: "118180989579",
                     appId: "1:118180989579:ios:b2d2961d5f8b4b1963628e"
                 };
@@ -105,12 +105,15 @@
     <div class="container">
         <h2>Dodawanie Dostępnych Terminów</h2>
         <form id="adminForm">
-            <label>Data:</label>
-            <input type="date" id="adminDate" required>
-            <label>Godzina początkowa:</label>
-            <input type="number" id="startTime" min="0" max="23" required>
-            <label>Godzina końcowa:</label>
-            <input type="number" id="endTime" min="0" max="23" required>
+            <label for="adminDate">Data:</label>
+            <input type="date" id="adminDate" name="adminDate" required>
+            
+            <label for="startTime">Godzina początkowa:</label>
+            <input type="time" id="startTime" name="startTime" required>
+            
+            <label for="endTime">Godzina końcowa:</label>
+            <input type="time" id="endTime" name="endTime" required>
+            
             <button type="submit">Dodaj dostępność</button>
         </form>
     </div>
@@ -119,26 +122,32 @@
         <h2>Rezerwacja Spotkania</h2>
         <form id="bookingForm">
             <label for="meetingType">Rodzaj spotkania:</label>
-            <select id="meetingType" required>
+            <select id="meetingType" name="meetingType" required>
                 <option value="online">Online</option>
                 <option value="biuro">W biurze (Zielona Góra)</option>
             </select>
+            
             <label for="name">Imię i nazwisko:</label>
-            <input type="text" id="name" required>
+            <input type="text" id="name" name="name" required>
+            
             <label for="email">E-mail:</label>
-            <input type="email" id="email" required>
+            <input type="email" id="email" name="email" required>
+            
             <label for="weddingDate">Data wesela:</label>
-            <input type="date" id="weddingDate" required>
+            <input type="date" id="weddingDate" name="weddingDate" required>
+            
             <label for="weddingPlace">Miejsce wesela:</label>
-            <input type="text" id="weddingPlace" required>
+            <input type="text" id="weddingPlace" name="weddingPlace" required>
+            
             <label for="services">Usługodawcy:</label>
-            <input type="text" id="services" placeholder="Wpisz usługodawców" required>
+            <input type="text" id="services" name="services" placeholder="Wpisz usługodawców" required>
+            
             <label for="message">Dodatkowa wiadomość:</label>
-            <textarea id="message" placeholder="Wpisz dodatkowe informacje"></textarea>
-            <label for="date">Data:</label>
-            <input type="date" id="date" required>
-            <label for="time">Godzina:</label>
-            <input type="time" id="time" required>
+            <textarea id="message" name="message" placeholder="Wpisz dodatkowe informacje"></textarea>
+            
+            <label for="meetingDateTime">Data i godzina spotkania:</label>
+            <input type="datetime-local" id="meetingDateTime" name="meetingDateTime" required>
+            
             <button type="submit">Zarezerwuj</button>
         </form>
         <p id="confirmation" style="color:green; display:none;">Rezerwacja potwierdzona!</p>
