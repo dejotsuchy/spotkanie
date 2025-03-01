@@ -75,16 +75,16 @@
                 .then(() => {
                     db.collection("availableSlots").doc(slotId).update({ booked: true });
 
-                    // Powiadomienie e-mail przez EmailJS
+                    // Powiadomienie e-mail przez EmailJS (Naprawione)
                     emailjs.send("service_f8ccgjc", "template_8x51wzj", {
-                        to_email: "projektweselelubuskie@gmail.com",  // Twój e-mail
+                        to_email: "projektweselelubuskie@gmail.com",
                         user_name: name,
                         user_email: email,
                         wedding_date: weddingDate,
                         wedding_place: weddingPlace,
                         selected_slot: selectedSlot,
-                        services: services,
-                        message: message
+                        services: services || "Brak usługodawców",
+                        message: message || "Brak dodatkowej wiadomości"
                     }).then(() => {
                         alert("Rezerwacja zapisana i e-mail wysłany!");
                         document.getElementById("bookingForm").reset();
@@ -105,8 +105,8 @@
         body {
             font-family: 'Arial', sans-serif;
             text-align: center;
-            background-color: #121212;
-            color: #d4af37;
+            background-color: #f4f4f4;
+            color: #333;
             margin: 0;
             padding: 0;
         }
@@ -114,34 +114,37 @@
             max-width: 600px;
             margin: 30px auto;
             padding: 20px;
-            background-color: #1e1e1e;
+            background-color: #fff;
             border-radius: 10px;
-            box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
         }
         label {
             display: block;
             margin-top: 10px;
             font-weight: bold;
             text-align: left;
-            color: #fff;
+            color: #333;
         }
         input, select, button, textarea {
             width: 100%;
             padding: 10px;
             margin-bottom: 10px;
-            border: 1px solid #d4af37;
+            border: 1px solid #ccc;
             border-radius: 5px;
-            background-color: #000;
-            color: #d4af37;
+            background-color: #fff;
+            color: #333;
         }
         button {
-            background-color: #d4af37;
+            background-color: #28a745;
             color: white;
             padding: 10px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
+        }
+        button:hover {
+            background-color: #218838;
         }
     </style>
 </head>
@@ -163,7 +166,7 @@
             <label for="weddingPlace">Miejsce wesela:</label>
             <input type="text" id="weddingPlace" required>
             <label for="services">Usługodawcy:</label>
-            <input type="text" id="services" placeholder="Wpisz usługodawców" required>
+            <input type="text" id="services" placeholder="Wpisz usługodawców">
             <label for="message">Dodatkowa wiadomość:</label>
             <textarea id="message" placeholder="Wpisz dodatkowe informacje"></textarea>
             <label for="availableSlots">Wybierz dostępny termin:</label>
