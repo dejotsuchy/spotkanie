@@ -29,6 +29,32 @@
             
             emailjs.init("xqyVbSjeXibISoZml");
 
+            function loadAvailableSlots() {
+                const slotsSelect = document.getElementById("availableSlots");
+                slotsSelect.innerHTML = "";
+                
+                db.collection("availableSlots").where("booked", "==", false).get()
+                    .then(snapshot => {
+                        if (snapshot.empty) {
+                            const option = document.createElement("option");
+                            option.textContent = "Brak dostępnych terminów";
+                            option.disabled = true;
+                            slotsSelect.appendChild(option);
+                        } else {
+                            snapshot.forEach(doc => {
+                                const slot = doc.data();
+                                const option = document.createElement("option");
+                                option.value = doc.id;
+                                option.textContent = `${slot.date} - ${slot.startTime} do ${slot.endTime}`;
+                                slotsSelect.appendChild(option);
+                            });
+                        }
+                    })
+                    .catch(error => console.error("Błąd pobierania terminów:", error));
+            }
+
+            loadAvailableSlots();
+
             document.getElementById("bookingForm").addEventListener("submit", async function(event) {
                 event.preventDefault();
                 
@@ -56,6 +82,8 @@
                     
                     await emailjs.send("service_f8ccgjc", "template_8x51wzj", emailParams);
                     alert("Potwierdzenie zostało wysłane na e-mail!");
+                    
+                    loadAvailableSlots(); // Odśwież listę dostępnych terminów
                 } catch (error) {
                     console.error("Błąd podczas rezerwacji:", error);
                     alert("Wystąpił błąd. Spróbuj ponownie później.");
