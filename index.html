@@ -26,97 +26,106 @@
             };
             firebase.initializeApp(firebaseConfig);
             const db = firebase.firestore();
-            
             emailjs.init("xqyVbSjeXibISoZml");
 
-            function loadAvailableSlots() {
-                const slotsSelect = document.getElementById("availableSlots");
-                slotsSelect.innerHTML = "";
-                console.log("Pobieranie dostępnych terminów...");
-                
-                db.collection("availableSlots").where("booked", "==", false).get()
-                    .then(snapshot => {
-                        console.log("Znaleziono dokumenty:", snapshot.docs.length);
-                        if (snapshot.empty) {
-                            console.log("Brak dostępnych terminów w bazie.");
-                            const option = document.createElement("option");
-                            option.textContent = "Brak dostępnych terminów";
-                            option.disabled = true;
-                            slotsSelect.appendChild(option);
-                        } else {
-                            snapshot.forEach(doc => {
-                                const slot = doc.data();
-                                console.log("Pobranie slotu:", slot);
-                                const option = document.createElement("option");
-                                option.value = doc.id;
-                                option.textContent = `${slot.date} - ${slot.startTime} do ${slot.endTime}`;
-                                slotsSelect.appendChild(option);
-                            });
-                        }
-                    })
-                    .catch(error => console.error("Błąd pobierania terminów:", error));
+            function splitIntoHourlySlots(date, startTime, endTime) {
+                let slots = [];
+                let start = new Date(`${date}T${startTime}`);
+                let end = new Date(`${date}T${endTime}`);
+
+                while (start < end) {
+                    let nextHour = new Date(start);
+                    nextHour.setHours(nextHour.getHours() + 1);
+                    if (nextHour > end) break;
+
+                    slots.push({
+                        date: date,
+                        startTime: start.toTimeString().substring(0, 5),
+                        endTime: nextHour.toTimeString().substring(0, 5),
+                        booked: false
+                    });
+
+                    start = nextHour;
+                }
+                return slots;
             }
 
-            loadAvailableSlots();
-
-            document.getElementById("bookingForm").addEventListener("submit", async function(event) {
+            document.getElementById("adminForm").addEventListener("submit", function(event) {
                 event.preventDefault();
+                const date = document.getElementById("adminDate").value;
+                const startTime = document.getElementById("startTime").value;
+                const endTime = document.getElementById("endTime").value;
+                const slots = splitIntoHourlySlots(date, startTime, endTime);
                 
-                const name = document.getElementById("name").value;
-                const email = document.getElementById("email").value.trim(); // Usunięcie zbędnych spacji
-                const weddingDate = document.getElementById("weddingDate").value;
-                const weddingPlace = document.getElementById("weddingPlace").value;
-                const services = document.getElementById("services").value;
-                const message = document.getElementById("message").value;
-                const selectedSlot = document.getElementById("availableSlots").value;
-                
-                if (!email) {
-                    alert("Proszę podać poprawny adres e-mail.");
-                    console.error("Błąd: Adres e-mail jest pusty.");
-                    return;
-                }
-                
-                try {
-                    const slotRef = db.collection("availableSlots").doc(selectedSlot);
-                    await slotRef.update({ booked: true });
-                    alert("Rezerwacja zakończona sukcesem!");
-                    
-                    const emailParams = {
-                        name: name,
-                        recipient_email: email, // Poprawiona nazwa zmiennej
-                        wedding_date: weddingDate,
-                        wedding_place: weddingPlace,
-                        services: services,
-                        message: message
-                    };
-                    
-                    console.log("Wysyłanie e-maila z parametrami:", emailParams);
-                    
-                    await emailjs.send("service_f8ccgjc", "template_8x51wzj", emailParams)
-                        .then(response => {
-                            console.log("Sukces EmailJS:", response);
-                            alert("Potwierdzenie zostało wysłane na e-mail!");
-                        })
-                        .catch(error => {
-                            console.error("Błąd wysyłania e-maila:", error);
-                            alert("Nie udało się wysłać e-maila. Sprawdź konsolę.");
-                        });
-                    
-                    loadAvailableSlots(); // Odśwież listę dostępnych terminów
-                } catch (error) {
-                    console.error("Błąd podczas rezerwacji:", error);
-                    alert("Wystąpił błąd. Spróbuj ponownie później.");
-                }
+                let batch = db.batch();
+                slots.forEach(slot => {
+                    let docRef = db.collection("availableSlots").doc();
+                    batch.set(docRef, slot);
+                });
+                batch.commit().then(() => {
+                    alert("Dostępne godziny zostały dodane.");
+                });
             });
+
+            function loadAvailableSlots() {
+                db.collection("availableSlots").where("booked", "==", false).onSnapshot(snapshot => {
+                    const slotsContainer = document.getElementById("availableSlots");
+                    slotsContainer.innerHTML = "";
+                    snapshot.forEach(doc => {
+                        const slot = doc.data();
+                        const option = document.createElement("option");
+                        option.value = doc.id;
+                        option.textContent = `${slot.date} - ${slot.startTime} do ${slot.endTime}`;
+                        slotsContainer.appendChild(option);
+                    });
+                });
+            }
+            loadAvailableSlots();
         });
     </script>
     
     <style>
-        body { font-family: 'Arial', sans-serif; text-align: center; background-color: #121212; color: #d4af37; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 30px auto; padding: 20px; background-color: #1e1e1e; border-radius: 10px; box-shadow: 0 0 15px rgba(212, 175, 55, 0.5); }
-        label { display: block; margin-top: 10px; font-weight: bold; text-align: left; color: #fff; }
-        input, select, button, textarea { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #d4af37; border-radius: 5px; background-color: #000; color: #d4af37; }
-        button { background-color: #d4af37; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            background-color: #121212;
+            color: #d4af37;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: #1e1e1e;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+            text-align: left;
+            color: #fff;
+        }
+        input, select, button, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #d4af37;
+            border-radius: 5px;
+            background-color: #000;
+            color: #d4af37;
+        }
+        button {
+            background-color: #d4af37;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
