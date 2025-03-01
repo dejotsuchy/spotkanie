@@ -63,12 +63,18 @@
                 event.preventDefault();
                 
                 const name = document.getElementById("name").value;
-                const email = document.getElementById("email").value;
+                const email = document.getElementById("email").value.trim(); // Usunięcie zbędnych spacji
                 const weddingDate = document.getElementById("weddingDate").value;
                 const weddingPlace = document.getElementById("weddingPlace").value;
                 const services = document.getElementById("services").value;
                 const message = document.getElementById("message").value;
                 const selectedSlot = document.getElementById("availableSlots").value;
+                
+                if (!email) {
+                    alert("Proszę podać poprawny adres e-mail.");
+                    console.error("Błąd: Adres e-mail jest pusty.");
+                    return;
+                }
                 
                 try {
                     const slotRef = db.collection("availableSlots").doc(selectedSlot);
@@ -77,15 +83,24 @@
                     
                     const emailParams = {
                         name: name,
-                        to_email: email, // Poprawiony klucz
+                        to_email: email, // Upewniamy się, że EmailJS rozpoznaje ten klucz
                         wedding_date: weddingDate,
                         wedding_place: weddingPlace,
                         services: services,
                         message: message
                     };
                     
-                    await emailjs.send("service_f8ccgjc", "template_8x51wzj", emailParams);
-                    alert("Potwierdzenie zostało wysłane na e-mail!");
+                    console.log("Wysyłanie e-maila z parametrami:", emailParams);
+                    
+                    await emailjs.send("service_f8ccgjc", "template_8x51wzj", emailParams)
+                        .then(response => {
+                            console.log("Sukces EmailJS:", response);
+                            alert("Potwierdzenie zostało wysłane na e-mail!");
+                        })
+                        .catch(error => {
+                            console.error("Błąd wysyłania e-maila:", error);
+                            alert("Nie udało się wysłać e-maila. Sprawdź konsolę.");
+                        });
                     
                     loadAvailableSlots(); // Odśwież listę dostępnych terminów
                 } catch (error) {
