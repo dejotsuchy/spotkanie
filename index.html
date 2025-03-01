@@ -32,10 +32,13 @@
             function loadAvailableSlots() {
                 const slotsSelect = document.getElementById("availableSlots");
                 slotsSelect.innerHTML = "";
+                console.log("Pobieranie dostępnych terminów...");
                 
                 db.collection("availableSlots").where("booked", "==", false).get()
                     .then(snapshot => {
+                        console.log("Znaleziono dokumenty:", snapshot.docs.length);
                         if (snapshot.empty) {
+                            console.log("Brak dostępnych terminów w bazie.");
                             const option = document.createElement("option");
                             option.textContent = "Brak dostępnych terminów";
                             option.disabled = true;
@@ -43,6 +46,7 @@
                         } else {
                             snapshot.forEach(doc => {
                                 const slot = doc.data();
+                                console.log("Pobranie slotu:", slot);
                                 const option = document.createElement("option");
                                 option.value = doc.id;
                                 option.textContent = `${slot.date} - ${slot.startTime} do ${slot.endTime}`;
