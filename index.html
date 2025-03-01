@@ -10,153 +10,98 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     
-    <!-- EmailJS -->
+    <!-- Nowa wersja EmailJS -->
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const firebaseConfig = {
-                apiKey: "API_KEY",
-                authDomain: "projekt-rezerwacja.firebaseapp.com",
-                projectId: "projekt-rezerwacja",
-                storageBucket: "projekt-rezerwacja.appspot.com",
-                messagingSenderId: "118180989579",
-                appId: "1:118180989579:ios:b2d2961d5f8b4b1963628e"
-            };
-            firebase.initializeApp(firebaseConfig);
-            const db = firebase.firestore();
-            console.log("✅ Firebase załadowany poprawnie!");
+            try {
+                console.log("Ładowanie Firebase...");
+                
+                const firebaseConfig = {
+                    apiKey: "API_KEY",
+                    authDomain: "projekt-rezerwacja.firebaseapp.com",
+                    projectId: "projekt-rezerwacja",
+                    storageBucket: "projekt-rezerwacja.appspot.com",
+                    messagingSenderId: "118180989579",
+                    appId: "1:118180989579:ios:b2d2961d5f8b4b1963628e"
+                };
 
-            // Inicjalizacja EmailJS
-            emailjs.init("xqyVbSjeXibISoZml");
-            console.log("📩 EmailJS załadowany poprawnie!");
+                firebase.initializeApp(firebaseConfig);
+                const db = firebase.firestore();
+                console.log("Firebase załadowany poprawnie!", firebase);
 
-            async function loadAvailableTimes() {
-                const dateSelect = document.getElementById("date");
-                const timeSelect = document.getElementById("time");
-                dateSelect.innerHTML = "<option value=''>Wybierz datę</option>";
-                timeSelect.innerHTML = "<option value=''>Wybierz godzinę</option>";
-
-                const snapshot = await db.collection("dostepne_terminy").get();
-                let dates = {};
-
-                snapshot.forEach(doc => {
-                    let data = doc.data();
-                    dates[data.date] = data.times;
-                });
-
-                Object.keys(dates).forEach(date => {
-                    let option = document.createElement("option");
-                    option.value = date;
-                    option.textContent = date;
-                    dateSelect.appendChild(option);
-                });
-
-                dateSelect.addEventListener("change", function () {
-                    timeSelect.innerHTML = "<option value=''>Wybierz godzinę</option>";
-                    let selectedDate = this.value;
-                    if (dates[selectedDate]) {
-                        dates[selectedDate].forEach(time => {
-                            let option = document.createElement("option");
-                            option.value = time;
-                            option.textContent = time;
-                            timeSelect.appendChild(option);
-                        });
-                    }
-                });
+                emailjs.init("xqyVbSjeXibISoZml");
+                console.log("EmailJS załadowany poprawnie!");
+            } catch (error) {
+                console.error("Błąd podczas ładowania Firebase: ", error);
             }
-
-            loadAvailableTimes();
-
-            document.getElementById("bookingForm").addEventListener("submit", async function(event) {
-                event.preventDefault();
-
-                const name = document.getElementById("name").value;
-                const email = document.getElementById("email").value;
-                const date = document.getElementById("date").value;
-                const time = document.getElementById("time").value;
-                const meetingType = document.getElementById("meetingType").value;
-
-                if (!date || !time) {
-                    alert("❌ Wybierz datę i godzinę!");
-                    return;
-                }
-
-                console.log("📩 Wysyłanie e-maila do admina...");
-
-                // Wysyłanie e-maila powiadamiającego administratora
-                emailjs.send("service_f8ccgjc", "template_8x51wzj", {
-                    from_name: name,
-                    from_email: email,
-                    to_name: "Mateusz",
-                    admin_email: "projektweselelubuskie@gmail.com",
-                    message: `Nowa rezerwacja od ${name}:
-Email: ${email}
-Rezerwacja na: ${date} o ${time}
-Rodzaj spotkania: ${meetingType}`
-                }).then(
-                    async function(response) {
-                        console.log("✅ Email wysłany pomyślnie: ", response.status, response.text);
-                        alert("✅ Rezerwacja potwierdzona! Sprawdź e-mail.");
-                        
-                        // Usuwanie wybranego terminu z Firestore, aby nie był dostępny ponownie
-                        let ref = db.collection("dostepne_terminy").where("date", "==", date);
-                        let snapshot = await ref.get();
-                        snapshot.forEach(async doc => {
-                            let availableTimes = doc.data().times;
-                            let updatedTimes = availableTimes.filter(t => t !== time);
-
-                            if (updatedTimes.length > 0) {
-                                await db.collection("dostepne_terminy").doc(doc.id).update({ times: updatedTimes });
-                            } else {
-                                await db.collection("dostepne_terminy").doc(doc.id).delete();
-                            }
-
-                            loadAvailableTimes(); // Aktualizacja listy dostępnych godzin
-                        });
-                    },
-                    function(error) {
-                        console.error("❌ Błąd wysyłania emaila: ", error);
-                        alert("❌ Błąd wysyłania e-maila: " + error.text);
-                    }
-                );
-            });
-
-            document.getElementById("adminForm").addEventListener("submit", async function(event) {
-                event.preventDefault();
-                const adminDate = document.getElementById("adminDate").value;
-                const startTime = parseInt(document.getElementById("startTime").value);
-                const endTime = parseInt(document.getElementById("endTime").value);
-                let times = [];
-
-                for (let hour = startTime; hour <= endTime; hour++) {
-                    times.push(`${hour}:00`);
-                }
-
-                await db.collection("dostepne_terminy").add({ date: adminDate, times });
-                alert("✅ Dostępność dodana!");
-                loadAvailableTimes();
-            });
-
         });
     </script>
     
     <style>
-        body { text-align: center; background-color: #f4f4f4; font-family: Arial, sans-serif; color: #333; }
-        .container { max-width: 600px; margin: 30px auto; padding: 20px; background: #fff; border-radius: 10px; box-shadow: 0 0 15px rgba(0, 0, 0, 0.2); }
-        button { background-color: #d4af37; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.3s; }
-        button:hover { background-color: #b89030; }
-        input, select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; }
-        header { background-color: black; padding: 20px; }
-        header img { max-width: 250px; }
-        h2 { color: #d4af37; }
+        body { 
+            font-family: 'Arial', sans-serif; 
+            text-align: center; 
+            background-color: #121212; 
+            color: #d4af37; 
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: #1e1e1e;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+        }
+        header {
+            background-color: #000;
+            color: #fff;
+            padding: 20px 0;
+        }
+        header img {
+            max-width: 200px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            margin-top: 10px;
+            font-weight: bold;
+            text-align: left;
+            color: #fff;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #d4af37;
+            border-radius: 5px;
+            background-color: #000;
+            color: #d4af37;
+        }
+        button {
+            background-color: #d4af37;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #b89030;
+        }
     </style>
 </head>
 <body>
     <header>
         <img src="https://www.projekt-wesele.pl/wp-content/uploads/2021/03/projekt-wesele-logo-01.png" alt="Projekt Wesele">
     </header>
-
+    
     <div class="container">
         <h2>Dodawanie Dostępnych Terminów</h2>
         <form id="adminForm">
@@ -169,16 +114,34 @@ Rodzaj spotkania: ${meetingType}`
             <button type="submit">Dodaj dostępność</button>
         </form>
     </div>
-
+    
     <div class="container">
         <h2>Rezerwacja Spotkania</h2>
         <form id="bookingForm">
-            <label>Data:</label>
-            <select id="date" required></select>
-            <label>Godzina:</label>
-            <select id="time" required></select>
+            <label for="meetingType">Rodzaj spotkania:</label>
+            <select id="meetingType" required>
+                <option value="online">Online</option>
+                <option value="biuro">W biurze (Zielona Góra)</option>
+            </select>
+            <label for="name">Imię i nazwisko:</label>
+            <input type="text" id="name" required>
+            <label for="email">E-mail:</label>
+            <input type="email" id="email" required>
+            <label for="weddingDate">Data wesela:</label>
+            <input type="date" id="weddingDate" required>
+            <label for="weddingPlace">Miejsce wesela:</label>
+            <input type="text" id="weddingPlace" required>
+            <label for="services">Usługodawcy:</label>
+            <input type="text" id="services" placeholder="Wpisz usługodawców" required>
+            <label for="message">Dodatkowa wiadomość:</label>
+            <textarea id="message" placeholder="Wpisz dodatkowe informacje"></textarea>
+            <label for="date">Data:</label>
+            <input type="date" id="date" required>
+            <label for="time">Godzina:</label>
+            <input type="time" id="time" required>
             <button type="submit">Zarezerwuj</button>
         </form>
+        <p id="confirmation" style="color:green; display:none;">Rezerwacja potwierdzona!</p>
     </div>
 </body>
 </html>
