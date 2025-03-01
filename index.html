@@ -86,30 +86,17 @@
 
             // Wysyłka EmailJS po rezerwacji
             document.getElementById("bookingForm").addEventListener("submit", function(event) {
-    event.preventDefault();
-    
-    const templateParams = {
-        from_name: document.getElementById("name").value,  // Imię i nazwisko
-        reply_to: document.getElementById("email").value,  // Adres e-mail
-        meetingType: document.getElementById("meetingType").value,
-        weddingDate: document.getElementById("weddingDate").value,
-        weddingPlace: document.getElementById("weddingPlace").value,
-        services: document.getElementById("services").value,
-        message: document.getElementById("message").value,
-        slot: document.getElementById("availableSlots").selectedOptions[0].textContent
-    };
-
-    console.log("Wysyłane dane do EmailJS:", templateParams); // Sprawdzenie w konsoli
-
-    emailjs.send("service_f8ccgjc", "template_8x51wzj", templateParams)
-        .then(function(response) {
-            alert("Rezerwacja została wysłana!");
-            console.log("SUCCESS!", response.status, response.text);
-        }, function(error) {
-            alert("Błąd wysyłania e-maila.");
-            console.error("FAILED...", error);
-        });
-});
+                event.preventDefault();
+                
+                const templateParams = {
+                    meetingType: document.getElementById("meetingType").value,
+                    name: document.getElementById("name").value,
+                    email: document.getElementById("email").value,
+                    weddingDate: document.getElementById("weddingDate").value,
+                    weddingPlace: document.getElementById("weddingPlace").value,
+                    services: document.getElementById("services").value,
+                    message: document.getElementById("message").value,
+                    slot: document.getElementById("availableSlots").selectedOptions[0].textContent
                 };
 
                 emailjs.send("service_f8ccgjc", "template_8x51wzj", templateParams)
