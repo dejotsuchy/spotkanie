@@ -28,24 +28,45 @@
             const db = firebase.firestore();
             emailjs.init("xqyVbSjeXibISoZml");
 
-            // Dodawanie dostępnych terminów
+            function splitIntoHourlySlots(date, startTime, endTime) {
+                let slots = [];
+                let start = new Date(`${date}T${startTime}`);
+                let end = new Date(`${date}T${endTime}`);
+
+                while (start < end) {
+                    let nextHour = new Date(start);
+                    nextHour.setHours(nextHour.getHours() + 1);
+                    if (nextHour > end) break;
+
+                    slots.push({
+                        date: date,
+                        startTime: start.toTimeString().substring(0, 5),
+                        endTime: nextHour.toTimeString().substring(0, 5),
+                        booked: false
+                    });
+
+                    start = nextHour;
+                }
+                return slots;
+            }
+
             document.getElementById("adminForm").addEventListener("submit", function(event) {
                 event.preventDefault();
                 const date = document.getElementById("adminDate").value;
                 const startTime = document.getElementById("startTime").value;
                 const endTime = document.getElementById("endTime").value;
+                const slots = splitIntoHourlySlots(date, startTime, endTime);
                 
-                db.collection("availableSlots").add({
-                    date: date,
-                    startTime: startTime,
-                    endTime: endTime,
-                    booked: false
-                }).then(() => {
-                    alert("Dostępny termin został dodany.");
+                let batch = db.batch();
+                slots.forEach(slot => {
+                    let docRef = db.collection("availableSlots").doc();
+                    batch.set(docRef, slot);
+                });
+                batch.commit().then(() => {
+                    alert("Dostępne godziny zostały dodane.");
                 });
             });
 
-            // Pobieranie dostępnych terminów
             function loadAvailableSlots() {
                 db.collection("availableSlots").where("booked", "==", false).onSnapshot(snapshot => {
                     const slotsContainer = document.getElementById("availableSlots");
@@ -53,7 +74,7 @@
                     snapshot.forEach(doc => {
                         const slot = doc.data();
                         const option = document.createElement("option");
-                        option.value = `${doc.id}`;
+                        option.value = doc.id;
                         option.textContent = `${slot.date} - ${slot.startTime} do ${slot.endTime}`;
                         slotsContainer.appendChild(option);
                     });
