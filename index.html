@@ -28,7 +28,45 @@
             const db = firebase.firestore();
             emailjs.init("xqyVbSjeXibISoZml");
 
-            // Funkcja do ładowania dostępnych terminów
+            function splitIntoHourlySlots(date, startTime, endTime) {
+                let slots = [];
+                let start = new Date(`${date}T${startTime}`);
+                let end = new Date(`${date}T${endTime}`);
+
+                while (start < end) {
+                    let nextHour = new Date(start);
+                    nextHour.setHours(nextHour.getHours() + 1);
+                    if (nextHour > end) break;
+
+                    slots.push({
+                        date: date,
+                        startTime: start.toTimeString().substring(0, 5),
+                        endTime: nextHour.toTimeString().substring(0, 5),
+                        booked: false
+                    });
+
+                    start = nextHour;
+                }
+                return slots;
+            }
+
+            document.getElementById("adminForm").addEventListener("submit", function(event) {
+                event.preventDefault();
+                const date = document.getElementById("adminDate").value;
+                const startTime = document.getElementById("startTime").value;
+                const endTime = document.getElementById("endTime").value;
+                const slots = splitIntoHourlySlots(date, startTime, endTime);
+                
+                let batch = db.batch();
+                slots.forEach(slot => {
+                    let docRef = db.collection("availableSlots").doc();
+                    batch.set(docRef, slot);
+                });
+                batch.commit().then(() => {
+                    alert("Dostępne godziny zostały dodane.");
+                });
+            });
+
             function loadAvailableSlots() {
                 db.collection("availableSlots").where("booked", "==", false).onSnapshot(snapshot => {
                     const slotsContainer = document.getElementById("availableSlots");
@@ -43,61 +81,6 @@
                 });
             }
             loadAvailableSlots();
-
-            // Obsługa rezerwacji
-            document.getElementById("bookingForm").addEventListener("submit", function(event) {
-                event.preventDefault();
-
-                const meetingType = document.getElementById("meetingType").value;
-                const name = document.getElementById("name").value;
-                const email = document.getElementById("email").value;
-                const weddingDate = document.getElementById("weddingDate").value;
-                const weddingPlace = document.getElementById("weddingPlace").value;
-                const services = document.getElementById("services").value;
-                const message = document.getElementById("message").value;
-                const slotId = document.getElementById("availableSlots").value;
-                const selectedSlot = document.querySelector(`#availableSlots option[value="${slotId}"]`).textContent;
-
-                const bookingData = {
-                    meetingType,
-                    name,
-                    email,
-                    weddingDate,
-                    weddingPlace,
-                    services,
-                    message,
-                    slotId,
-                    selectedSlot,
-                    bookedAt: new Date().toISOString()
-                };
-
-                db.collection("bookings").add(bookingData)
-                .then(() => {
-                    db.collection("availableSlots").doc(slotId).update({ booked: true });
-
-                    // Powiadomienie e-mail przez EmailJS (Naprawione)
-                    emailjs.send("service_f8ccgjc", "template_8x51wzj", {
-                        to_email: "projektweselelubuskie@gmail.com",
-                        user_name: name,
-                        user_email: email,
-                        wedding_date: weddingDate,
-                        wedding_place: weddingPlace,
-                        selected_slot: selectedSlot,
-                        services: services || "Brak usługodawców",
-                        message: message || "Brak dodatkowej wiadomości"
-                    }).then(() => {
-                        alert("Rezerwacja zapisana i e-mail wysłany!");
-                        document.getElementById("bookingForm").reset();
-                        loadAvailableSlots();
-                    }).catch(error => {
-                        console.error("Błąd wysyłania e-maila:", error);
-                        alert("Rezerwacja zapisana, ale wystąpił błąd przy wysyłce e-maila.");
-                    });
-                })
-                .catch(error => {
-                    console.error("Błąd zapisu rezerwacji:", error);
-                });
-            });
         });
     </script>
     
@@ -105,8 +88,8 @@
         body {
             font-family: 'Arial', sans-serif;
             text-align: center;
-            background-color: #f4f4f4;
-            color: #333;
+            background-color: #121212;
+            color: #d4af37;
             margin: 0;
             padding: 0;
         }
@@ -114,28 +97,28 @@
             max-width: 600px;
             margin: 30px auto;
             padding: 20px;
-            background-color: #fff;
+            background-color: #1e1e1e;
             border-radius: 10px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
         }
         label {
             display: block;
             margin-top: 10px;
             font-weight: bold;
             text-align: left;
-            color: #333;
+            color: #fff;
         }
         input, select, button, textarea {
             width: 100%;
             padding: 10px;
             margin-bottom: 10px;
-            border: 1px solid #ccc;
+            border: 1px solid #d4af37;
             border-radius: 5px;
-            background-color: #fff;
-            color: #333;
+            background-color: #000;
+            color: #d4af37;
         }
         button {
-            background-color: #28a745;
+            background-color: #d4af37;
             color: white;
             padding: 10px;
             border: none;
@@ -143,12 +126,22 @@
             cursor: pointer;
             font-size: 16px;
         }
-        button:hover {
-            background-color: #218838;
-        }
     </style>
 </head>
 <body>
+    <div class="container">
+        <h2>Dodawanie Dostępnych Terminów</h2>
+        <form id="adminForm">
+            <label>Data:</label>
+            <input type="date" id="adminDate" required>
+            <label>Godzina początkowa:</label>
+            <input type="time" id="startTime" required>
+            <label>Godzina końcowa:</label>
+            <input type="time" id="endTime" required>
+            <button type="submit">Dodaj dostępność</button>
+        </form>
+    </div>
+    
     <div class="container">
         <h2>Rezerwacja Spotkania</h2>
         <form id="bookingForm">
@@ -166,7 +159,7 @@
             <label for="weddingPlace">Miejsce wesela:</label>
             <input type="text" id="weddingPlace" required>
             <label for="services">Usługodawcy:</label>
-            <input type="text" id="services" placeholder="Wpisz usługodawców">
+            <input type="text" id="services" placeholder="Wpisz usługodawców" required>
             <label for="message">Dodatkowa wiadomość:</label>
             <textarea id="message" placeholder="Wpisz dodatkowe informacje"></textarea>
             <label for="availableSlots">Wybierz dostępny termin:</label>
