@@ -1,150 +1,78 @@
-<!DOCTYPE html>
-<html lang="pl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rezerwacja Terminów</title>
-    
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    
-    <!-- EmailJS -->
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            // Firebase konfiguracja
-            const firebaseConfig = {
-                apiKey: "AIzaSyAeWykrY_aL427Q-aFLOs-K0GOBgmGhEgs",
-                authDomain: "projekt-rezerwacja.firebaseapp.com",
-                projectId: "projekt-rezerwacja",
-                storageBucket: "projekt-rezerwacja.appspot.com",
-                messagingSenderId: "118180989579",
-                appId: "1:118180989579:web:dd3e4487c40d0b3863628e",
-                measurementId: "G-KBZ1VVJ9QH"
-            };
-            firebase.initializeApp(firebaseConfig);
-            const db = firebase.firestore();
-            emailjs.init("xqyVbSjeXibISoZml");
+document.addEventListener("DOMContentLoaded", function () {
+    // Firebase konfiguracja
+    const firebaseConfig = {
+        apiKey: "AIzaSyAeWykrY_aL427Q-aFLOs-K0GOBgmGhEgs",
+        authDomain: "projekt-rezerwacja.firebaseapp.com",
+        projectId: "projekt-rezerwacja",
+        storageBucket: "projekt-rezerwacja.appspot.com",
+        messagingSenderId: "118180989579",
+        appId: "1:118180989579:web:dd3e4487c40d0b3863628e",
+        measurementId: "G-KBZ1VVJ9QH"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    emailjs.init("xqyVbSjeXibISoZml");
 
-            // Dodawanie dostępnych terminów
-            document.getElementById("adminForm").addEventListener("submit", function(event) {
-                event.preventDefault();
-                const date = document.getElementById("adminDate").value;
-                const startTime = document.getElementById("startTime").value;
-                const endTime = document.getElementById("endTime").value;
-                
-                db.collection("availableSlots").add({
-                    date: date,
-                    startTime: startTime,
-                    endTime: endTime,
-                    booked: false
-                }).then(() => {
-                    alert("Dostępny termin został dodany.");
-                });
+    // Funkcja dzieląca przedział na 1-godzinne sloty
+    function splitIntoHourlySlots(date, startTime, endTime) {
+        let slots = [];
+        let start = new Date(`${date}T${startTime}`);
+        let end = new Date(`${date}T${endTime}`);
+
+        while (start < end) {
+            let nextHour = new Date(start);
+            nextHour.setHours(nextHour.getHours() + 1);
+
+            if (nextHour > end) break; // Zapobiega przekraczaniu końca przedziału
+
+            slots.push({
+                date: date,
+                startTime: start.toTimeString().substring(0, 5), // Format HH:MM
+                endTime: nextHour.toTimeString().substring(0, 5),
+                booked: false
             });
 
-            // Pobieranie dostępnych terminów
-            function loadAvailableSlots() {
-                db.collection("availableSlots").where("booked", "==", false).onSnapshot(snapshot => {
-                    const slotsContainer = document.getElementById("availableSlots");
-                    slotsContainer.innerHTML = "";
-                    snapshot.forEach(doc => {
-                        const slot = doc.data();
-                        const option = document.createElement("option");
-                        option.value = `${doc.id}`;
-                        option.textContent = `${slot.date} - ${slot.startTime} do ${slot.endTime}`;
-                        slotsContainer.appendChild(option);
-                    });
-                });
-            }
-            loadAvailableSlots();
+            start = nextHour; // Przesunięcie do następnej godziny
+        }
+
+        return slots;
+    }
+
+    // Dodawanie dostępnych godzinnych terminów
+    document.getElementById("adminForm").addEventListener("submit", function(event) {
+        event.preventDefault();
+        const date = document.getElementById("adminDate").value;
+        const startTime = document.getElementById("startTime").value;
+        const endTime = document.getElementById("endTime").value;
+
+        const slots = splitIntoHourlySlots(date, startTime, endTime);
+        
+        // Dodanie podzielonych slotów do Firestore
+        let batch = db.batch();
+        slots.forEach(slot => {
+            let docRef = db.collection("availableSlots").doc(); // Tworzy nowy dokument dla każdego slotu
+            batch.set(docRef, slot);
         });
-    </script>
+
+        batch.commit().then(() => {
+            alert("Dostępne godziny zostały dodane.");
+        });
+    });
+
+    // Pobieranie dostępnych terminów
+    function loadAvailableSlots() {
+        db.collection("availableSlots").where("booked", "==", false).onSnapshot(snapshot => {
+            const slotsContainer = document.getElementById("availableSlots");
+            slotsContainer.innerHTML = "";
+            snapshot.forEach(doc => {
+                const slot = doc.data();
+                const option = document.createElement("option");
+                option.value = doc.id;
+                option.textContent = `${slot.date} - ${slot.startTime} do ${slot.endTime}`;
+                slotsContainer.appendChild(option);
+            });
+        });
+    }
     
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            text-align: center;
-            background-color: #121212;
-            color: #d4af37;
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            max-width: 600px;
-            margin: 30px auto;
-            padding: 20px;
-            background-color: #1e1e1e;
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
-        }
-        label {
-            display: block;
-            margin-top: 10px;
-            font-weight: bold;
-            text-align: left;
-            color: #fff;
-        }
-        input, select, button, textarea {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #d4af37;
-            border-radius: 5px;
-            background-color: #000;
-            color: #d4af37;
-        }
-        button {
-            background-color: #d4af37;
-            color: white;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h2>Dodawanie Dostępnych Terminów</h2>
-        <form id="adminForm">
-            <label>Data:</label>
-            <input type="date" id="adminDate" required>
-            <label>Godzina początkowa:</label>
-            <input type="time" id="startTime" required>
-            <label>Godzina końcowa:</label>
-            <input type="time" id="endTime" required>
-            <button type="submit">Dodaj dostępność</button>
-        </form>
-    </div>
-    
-    <div class="container">
-        <h2>Rezerwacja Spotkania</h2>
-        <form id="bookingForm">
-            <label for="meetingType">Rodzaj spotkania:</label>
-            <select id="meetingType" required>
-                <option value="online">Online</option>
-                <option value="biuro">W biurze</option>
-            </select>
-            <label for="name">Imię i nazwisko:</label>
-            <input type="text" id="name" required>
-            <label for="email">E-mail:</label>
-            <input type="email" id="email" required>
-            <label for="weddingDate">Data wesela:</label>
-            <input type="date" id="weddingDate" required>
-            <label for="weddingPlace">Miejsce wesela:</label>
-            <input type="text" id="weddingPlace" required>
-            <label for="services">Usługodawcy:</label>
-            <input type="text" id="services" placeholder="Wpisz usługodawców" required>
-            <label for="message">Dodatkowa wiadomość:</label>
-            <textarea id="message" placeholder="Wpisz dodatkowe informacje"></textarea>
-            <label for="availableSlots">Wybierz dostępny termin:</label>
-            <select id="availableSlots" required></select>
-            <button type="submit">Zarezerwuj</button>
-        </form>
-    </div>
-</body>
-</html>
+    loadAvailableSlots();
+});
