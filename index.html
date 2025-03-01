@@ -31,7 +31,43 @@
             emailjs.init("xqyVbSjeXibISoZml");
             console.log("📩 EmailJS załadowany poprawnie!");
 
-            // Obsługa formularza rezerwacji
+            async function loadAvailableTimes() {
+                const dateSelect = document.getElementById("date");
+                const timeSelect = document.getElementById("time");
+                dateSelect.innerHTML = "<option value=''>Wybierz datę</option>";
+                timeSelect.innerHTML = "<option value=''>Wybierz godzinę</option>";
+
+                const snapshot = await db.collection("dostepne_terminy").get();
+                let dates = {};
+
+                snapshot.forEach(doc => {
+                    let data = doc.data();
+                    dates[data.date] = data.times;
+                });
+
+                Object.keys(dates).forEach(date => {
+                    let option = document.createElement("option");
+                    option.value = date;
+                    option.textContent = date;
+                    dateSelect.appendChild(option);
+                });
+
+                dateSelect.addEventListener("change", function () {
+                    timeSelect.innerHTML = "<option value=''>Wybierz godzinę</option>";
+                    let selectedDate = this.value;
+                    if (dates[selectedDate]) {
+                        dates[selectedDate].forEach(time => {
+                            let option = document.createElement("option");
+                            option.value = time;
+                            option.textContent = time;
+                            timeSelect.appendChild(option);
+                        });
+                    }
+                });
+            }
+
+            loadAvailableTimes();
+
             document.getElementById("bookingForm").addEventListener("submit", async function(event) {
                 event.preventDefault();
 
@@ -40,6 +76,11 @@
                 const date = document.getElementById("date").value;
                 const time = document.getElementById("time").value;
                 const meetingType = document.getElementById("meetingType").value;
+
+                if (!date || !time) {
+                    alert("❌ Wybierz datę i godzinę!");
+                    return;
+                }
 
                 console.log("📩 Wysyłanie e-maila do admina...");
 
@@ -54,13 +95,29 @@ Email: ${email}
 Rezerwacja na: ${date} o ${time}
 Rodzaj spotkania: ${meetingType}`
                 }).then(
-                    function(response) {
+                    async function(response) {
                         console.log("✅ Email wysłany pomyślnie: ", response.status, response.text);
-                        alert("Potwierdzenie wysłane na e-mail administratora.");
+                        alert("✅ Rezerwacja potwierdzona! Sprawdź e-mail.");
+                        
+                        // Usuwanie wybranego terminu z Firestore, aby nie był dostępny ponownie
+                        let ref = db.collection("dostepne_terminy").where("date", "==", date);
+                        let snapshot = await ref.get();
+                        snapshot.forEach(async doc => {
+                            let availableTimes = doc.data().times;
+                            let updatedTimes = availableTimes.filter(t => t !== time);
+
+                            if (updatedTimes.length > 0) {
+                                await db.collection("dostepne_terminy").doc(doc.id).update({ times: updatedTimes });
+                            } else {
+                                await db.collection("dostepne_terminy").doc(doc.id).delete();
+                            }
+
+                            loadAvailableTimes(); // Aktualizacja listy dostępnych godzin
+                        });
                     },
                     function(error) {
                         console.error("❌ Błąd wysyłania emaila: ", error);
-                        alert("Błąd wysyłania e-maila: " + error.text);
+                        alert("❌ Błąd wysyłania e-maila: " + error.text);
                     }
                 );
             });
@@ -68,11 +125,50 @@ Rodzaj spotkania: ${meetingType}`
     </script>
     
     <style>
-        body { text-align: center; background-color: #f4f4f4; font-family: Arial, sans-serif; }
-        .container { max-width: 600px; margin: 30px auto; padding: 20px; background: #fff; border-radius: 10px; box-shadow: 0 0 15px rgba(0, 0, 0, 0.1); }
-        button { background-color: #d4af37; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
-        button:hover { background-color: #b89030; }
-        input, select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        body { 
+            text-align: center; 
+            background-color: #f4f4f4; 
+            font-family: Arial, sans-serif; 
+            color: #333;
+        }
+        .container { 
+            max-width: 600px; 
+            margin: 30px auto; 
+            padding: 20px; 
+            background: #fff; 
+            border-radius: 10px; 
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        }
+        button { 
+            background-color: #d4af37; 
+            color: white; 
+            padding: 10px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            transition: 0.3s;
+        }
+        button:hover { 
+            background-color: #b89030; 
+        }
+        input, select { 
+            width: 100%; 
+            padding: 10px; 
+            margin-bottom: 10px; 
+            border: 1px solid #ccc; 
+            border-radius: 5px; 
+        }
+        header {
+            background-color: black;
+            padding: 20px;
+        }
+        header img {
+            max-width: 250px;
+        }
+        h2 {
+            color: #d4af37;
+        }
     </style>
 </head>
 <body>
@@ -93,9 +189,9 @@ Rodzaj spotkania: ${meetingType}`
             <label>E-mail:</label>
             <input type="email" id="email" required>
             <label>Data:</label>
-            <input type="date" id="date" required>
+            <select id="date" required></select>
             <label>Godzina:</label>
-            <input type="time" id="time" required>
+            <select id="time" required></select>
             <button type="submit">Zarezerwuj</button>
         </form>
     </div>
