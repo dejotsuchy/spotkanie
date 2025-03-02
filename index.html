@@ -30,45 +30,6 @@
             // Inicjalizacja EmailJS
             emailjs.init("xqyVbSjeXibISoZml");
 
-            function splitIntoHourlySlots(date, startTime, endTime) {
-                let slots = [];
-                let start = new Date(`${date}T${startTime}`);
-                let end = new Date(`${date}T${endTime}`);
-
-                while (start < end) {
-                    let nextHour = new Date(start);
-                    nextHour.setHours(nextHour.getHours() + 1);
-                    if (nextHour > end) break;
-
-                    slots.push({
-                        date: date,
-                        startTime: start.toTimeString().substring(0, 5),
-                        endTime: nextHour.toTimeString().substring(0, 5),
-                        booked: false
-                    });
-
-                    start = nextHour;
-                }
-                return slots;
-            }
-
-            document.getElementById("adminForm").addEventListener("submit", function(event) {
-                event.preventDefault();
-                const date = document.getElementById("adminDate").value;
-                const startTime = document.getElementById("startTime").value;
-                const endTime = document.getElementById("endTime").value;
-                const slots = splitIntoHourlySlots(date, startTime, endTime);
-                
-                let batch = db.batch();
-                slots.forEach(slot => {
-                    let docRef = db.collection("availableSlots").doc();
-                    batch.set(docRef, slot);
-                });
-                batch.commit().then(() => {
-                    alert("Dostępne godziny zostały dodane.");
-                });
-            });
-
             function loadAvailableSlots() {
                 db.collection("availableSlots").where("booked", "==", false).onSnapshot(snapshot => {
                     const slotsContainer = document.getElementById("availableSlots");
@@ -84,91 +45,53 @@
             }
             loadAvailableSlots();
 
-            // Wysyłka EmailJS po rezerwacji
             document.getElementById("bookingForm").addEventListener("submit", function(event) {
                 event.preventDefault();
                 
-                const templateParams = {
+                const selectedSlot = document.getElementById("availableSlots").value;
+                const selectedSlotText = document.getElementById("availableSlots").selectedOptions[0].textContent;
+                const userEmail = document.getElementById("email").value;
+                const userName = document.getElementById("name").value;
+                const reservationId = Date.now().toString(); 
+                
+                const reservationData = {
                     meetingType: document.getElementById("meetingType").value,
-                    name: document.getElementById("name").value,
-                    email: document.getElementById("email").value,
+                    name: userName,
+                    email: userEmail,
                     weddingDate: document.getElementById("weddingDate").value,
                     weddingPlace: document.getElementById("weddingPlace").value,
                     services: document.getElementById("services").value,
                     message: document.getElementById("message").value,
-                    slot: document.getElementById("availableSlots").selectedOptions[0].textContent
+                    slot: selectedSlotText,
+                    slotId: selectedSlot,
+                    status: "pending"
                 };
 
-                emailjs.send("service_f8ccgjc", "template_8x51wzj", templateParams)
-                    .then(function(response) {
-                        alert("Rezerwacja została wysłana!");
-                        console.log("SUCCESS!", response.status, response.text);
-                    }, function(error) {
-                        alert("Błąd wysyłania e-maila.");
-                        console.error("FAILED...", error);
+                db.collection("reservations").doc(reservationId).set(reservationData)
+                    .then(() => {
+                        const confirmationLink = `${window.location.origin}/confirm.html?id=${reservationId}`;
+                        const templateParams = {
+                            to_name: userName,
+                            to_email: userEmail,
+                            confirmation_link: confirmationLink
+                        };
+
+                        emailjs.send("service_f8ccgjc", "template_confirm", templateParams)
+                            .then(() => {
+                                alert("Wysłano e-mail z linkiem potwierdzającym rezerwację!");
+                            })
+                            .catch(error => {
+                                console.error("Błąd wysyłki e-maila:", error);
+                            });
+                    })
+                    .catch(error => {
+                        console.error("Błąd zapisu do Firebase:", error);
                     });
             });
         });
     </script>
-    
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            text-align: center;
-            background-color: #121212;
-            color: #d4af37;
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            max-width: 600px;
-            margin: 30px auto;
-            padding: 20px;
-            background-color: #1e1e1e;
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
-        }
-        label {
-            display: block;
-            margin-top: 10px;
-            font-weight: bold;
-            text-align: left;
-            color: #fff;
-        }
-        input, select, button, textarea {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #d4af37;
-            border-radius: 5px;
-            background-color: #000;
-            color: #d4af37;
-        }
-        button {
-            background-color: #d4af37;
-            color: white;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-    </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Dodawanie Dostępnych Terminów</h2>
-        <form id="adminForm">
-            <label>Data:</label>
-            <input type="date" id="adminDate" required>
-            <label>Godzina początkowa:</label>
-            <input type="time" id="startTime" required>
-            <label>Godzina końcowa:</label>
-            <input type="time" id="endTime" required>
-            <button type="submit">Dodaj dostępność</button>
-        </form>
-    </div>
-    
     <div class="container">
         <h2>Rezerwacja Spotkania</h2>
         <form id="bookingForm">
