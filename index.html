@@ -3,20 +3,340 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rezerwacja Terminów</title>
+    <title>Rezerwacja Terminów - Twoja Firma</title>
     
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     
     <!-- EmailJS -->
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     
+    <!-- Toastify - notyfikacje -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    
+    <!-- FullCalendar - widok kalendarza -->
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css' rel='stylesheet' />
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js'></script>
+    
+    <style>
+        :root {
+            --primary-color: #d4af37;
+            --dark-bg: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #ffffff;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            background-color: var(--dark-bg);
+            color: var(--primary-color);
+            margin: 0;
+            padding: 0;
+        }
+        
+        .header {
+            padding: 20px;
+            background-color: var(--card-bg);
+            border-bottom: 2px solid var(--primary-color);
+        }
+        
+        .header h1 {
+            margin: 0;
+            color: var(--primary-color);
+        }
+        
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            margin: 0 5px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border: 1px solid var(--primary-color);
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .tab.active {
+            background-color: var(--primary-color);
+            color: var(--dark-bg);
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+            text-align: left;
+            color: var(--text-color);
+        }
+        
+        input, select, button, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 5px;
+            border: 1px solid var(--primary-color);
+            border-radius: 5px;
+            background-color: var(--dark-bg);
+            color: var(--text-color);
+        }
+        
+        .error {
+            color: #ff6b6b;
+            font-size: 0.85em;
+            text-align: left;
+            display: none;
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: var(--dark-bg);
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        
+        #calendar {
+            margin-top: 20px;
+            height: 500px;
+        }
+        
+        .fc-event {
+            cursor: pointer;
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: var(--dark-bg);
+        }
+        
+        .section {
+            display: none;
+        }
+        
+        .section.active {
+            display: block;
+        }
+        
+        .loader {
+            display: none;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 2s linear infinite;
+            margin: 10px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .booking-success {
+            background-color: #4caf50;
+            color: white;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .login-form {
+            max-width: 400px;
+            margin: 40px auto;
+        }
+        
+        /* Responsywność */
+        @media (max-width: 600px) {
+            .container {
+                width: 95%;
+                padding: 10px;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .tab {
+                margin-bottom: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Rezerwacja Spotkań - Twoja Firma</h1>
+    </div>
+    
+    <div class="tabs">
+        <div class="tab active" data-tab="booking">Zarezerwuj Spotkanie</div>
+        <div class="tab" data-tab="calendar">Kalendarz Dostępności</div>
+        <div class="tab" data-tab="admin">Panel Administratora</div>
+    </div>
+    
+    <!-- Sekcja rezerwacji -->
+    <div id="booking-section" class="section active">
+        <div class="container">
+            <h2>Zarezerwuj Spotkanie</h2>
+            <form id="bookingForm">
+                <div class="form-group">
+                    <label for="meetingType">Rodzaj spotkania:</label>
+                    <select id="meetingType" required>
+                        <option value="">Wybierz rodzaj spotkania</option>
+                        <option value="online">Online</option>
+                        <option value="biuro">W biurze</option>
+                    </select>
+                    <div id="meetingType-error" class="error">Proszę wybrać rodzaj spotkania</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="name">Imię i nazwisko:</label>
+                    <input type="text" id="name" required>
+                    <div id="name-error" class="error">Proszę podać imię i nazwisko</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">E-mail:</label>
+                    <input type="email" id="email" required>
+                    <div id="email-error" class="error">Proszę podać poprawny adres e-mail</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="phone">Telefon kontaktowy:</label>
+                    <input type="tel" id="phone" required>
+                    <div id="phone-error" class="error">Proszę podać numer telefonu</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="weddingDate">Data wesela:</label>
+                    <input type="date" id="weddingDate" required>
+                    <div id="weddingDate-error" class="error">Proszę podać datę wesela</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="weddingPlace">Miejsce wesela:</label>
+                    <input type="text" id="weddingPlace" required>
+                    <div id="weddingPlace-error" class="error">Proszę podać miejsce wesela</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="services">Usługodawcy, z którymi już współpracujesz:</label>
+                    <input type="text" id="services">
+                </div>
+                
+                <div class="form-group">
+                    <label for="message">Dodatkowe informacje:</label>
+                    <textarea id="message" rows="4"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="availableSlots">Wybierz dostępny termin:</label>
+                    <select id="availableSlots" required>
+                        <option value="">Ładowanie terminów...</option>
+                    </select>
+                    <div id="availableSlots-error" class="error">Proszę wybrać termin spotkania</div>
+                </div>
+                
+                <div class="loader" id="booking-loader"></div>
+                <button type="submit">Zarezerwuj Spotkanie</button>
+            </form>
+            
+            <div class="booking-success" id="booking-success">
+                <h3>Rezerwacja została przyjęta!</h3>
+                <p>Na podany adres e-mail została wysłana wiadomość z potwierdzeniem.</p>
+                <p>Dziękujemy za skorzystanie z naszych usług.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sekcja kalendarza -->
+    <div id="calendar-section" class="section">
+        <div class="container">
+            <h2>Dostępne Terminy</h2>
+            <div id="calendar"></div>
+        </div>
+    </div>
+    
+    <!-- Sekcja administratora -->
+    <div id="admin-section" class="section">
+        <div class="container" id="admin-login">
+            <h2>Panel Administratora</h2>
+            <div class="login-form">
+                <div class="form-group">
+                    <label for="admin-email">Email:</label>
+                    <input type="email" id="admin-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="admin-password">Hasło:</label>
+                    <input type="password" id="admin-password" required>
+                </div>
+                <div class="loader" id="login-loader"></div>
+                <button id="login-btn">Zaloguj się</button>
+            </div>
+        </div>
+        
+        <div class="container" id="admin-panel" style="display: none;">
+            <h2>Zarządzanie Terminami</h2>
+            <form id="adminForm">
+                <div class="form-group">
+                    <label for="adminDate">Data:</label>
+                    <input type="date" id="adminDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="startTime">Godzina początkowa:</label>
+                    <input type="time" id="startTime" required>
+                </div>
+                <div class="form-group">
+                    <label for="endTime">Godzina końcowa:</label>
+                    <input type="time" id="endTime" required>
+                </div>
+                <div class="loader" id="admin-loader"></div>
+                <button type="submit">Dodaj dostępność</button>
+            </form>
+            
+            <div style="margin-top: 30px;">
+                <h3>Nadchodzące Rezerwacje</h3>
+                <div id="bookings-list">Ładowanie rezerwacji...</div>
+            </div>
+            
+            <button id="logout-btn" style="margin-top: 30px; background-color: #ff6b6b;">Wyloguj się</button>
+        </div>
+    </div>
+    
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            // Firebase konfiguracja
+            // Firebase konfiguracja - w prawdziwej aplikacji te informacje powinny być ukryte
             const firebaseConfig = {
-                apiKey: "AIzaSyAeWykrY_aL427Q-aFLOs-K0GOBgmGhEgs",
+                apiKey: "YOUR_API_KEY", // Zastąp swoim prawdziwym kluczem lub użyj zmiennych środowiskowych
                 authDomain: "projekt-rezerwacja.firebaseapp.com",
                 projectId: "projekt-rezerwacja",
                 storageBucket: "projekt-rezerwacja.appspot.com",
@@ -24,175 +344,395 @@
                 appId: "1:118180989579:web:dd3e4487c40d0b3863628e",
                 measurementId: "G-KBZ1VVJ9QH"
             };
+            
+            // Inicjalizacja Firebase
             firebase.initializeApp(firebaseConfig);
             const db = firebase.firestore();
+            const auth = firebase.auth();
             
             // Inicjalizacja EmailJS
-            emailjs.init("xqyVbSjeXibISoZml");
-
+            emailjs.init("YOUR_EMAILJS_KEY"); // Zastąp swoim prawdziwym kluczem
+            
+            // Obsługa zakładek
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const targetTab = tab.dataset.tab;
+                    
+                    // Aktywna zakładka
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    // Aktywna sekcja
+                    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+                    document.getElementById(`${targetTab}-section`).classList.add('active');
+                    
+                    // Inicjalizacja kalendarza przy przełączeniu na jego widok
+                    if (targetTab === 'calendar') {
+                        initCalendar();
+                    }
+                });
+            });
+            
+            // Funkcje pomocnicze
+            function showNotification(message, isSuccess = true) {
+                Toastify({
+                    text: message,
+                    duration: 3000,
+                    close: true,
+                    gravity: "top",
+                    position: "center",
+                    backgroundColor: isSuccess ? "#4caf50" : "#ff6b6b",
+                }).showToast();
+            }
+            
+            function showLoader(id) {
+                document.getElementById(id).style.display = 'block';
+            }
+            
+            function hideLoader(id) {
+                document.getElementById(id).style.display = 'none';
+            }
+            
+            function validateForm(formId, fieldsToValidate) {
+                let isValid = true;
+                
+                fieldsToValidate.forEach(field => {
+                    const element = document.getElementById(field);
+                    const errorElement = document.getElementById(`${field}-error`);
+                    
+                    if (!element.value.trim()) {
+                        errorElement.style.display = 'block';
+                        isValid = false;
+                    } else {
+                        errorElement.style.display = 'none';
+                        
+                        // Dodatkowa walidacja dla emaila
+                        if (field === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(element.value)) {
+                            errorElement.style.display = 'block';
+                            isValid = false;
+                        }
+                    }
+                });
+                
+                return isValid;
+            }
+            
+            // Logika dzielenia na godzinowe sloty
             function splitIntoHourlySlots(date, startTime, endTime) {
                 let slots = [];
                 let start = new Date(`${date}T${startTime}`);
                 let end = new Date(`${date}T${endTime}`);
-
+                
+                // Sprawdzenie czy data jest w przeszłości
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const slotDate = new Date(date);
+                slotDate.setHours(0, 0, 0, 0);
+                
+                if (slotDate < today) {
+                    showNotification("Nie można dodać terminów z przeszłości!", false);
+                    return [];
+                }
+                
                 while (start < end) {
                     let nextHour = new Date(start);
                     nextHour.setHours(nextHour.getHours() + 1);
                     if (nextHour > end) break;
-
+                    
                     slots.push({
                         date: date,
                         startTime: start.toTimeString().substring(0, 5),
                         endTime: nextHour.toTimeString().substring(0, 5),
-                        booked: false
+                        booked: false,
+                        createdAt: new Date()
                     });
-
+                    
                     start = nextHour;
                 }
                 return slots;
             }
-
+            
+            // Admin panel - dodawanie dostępności
             document.getElementById("adminForm").addEventListener("submit", function(event) {
                 event.preventDefault();
+                
+                if (!validateForm('adminForm', ['adminDate', 'startTime', 'endTime'])) {
+                    return;
+                }
+                
+                showLoader('admin-loader');
+                
                 const date = document.getElementById("adminDate").value;
                 const startTime = document.getElementById("startTime").value;
                 const endTime = document.getElementById("endTime").value;
                 const slots = splitIntoHourlySlots(date, startTime, endTime);
+                
+                if (slots.length === 0) {
+                    hideLoader('admin-loader');
+                    return;
+                }
                 
                 let batch = db.batch();
                 slots.forEach(slot => {
                     let docRef = db.collection("availableSlots").doc();
                     batch.set(docRef, slot);
                 });
-                batch.commit().then(() => {
-                    alert("Dostępne godziny zostały dodane.");
-                });
-            });
-
-            function loadAvailableSlots() {
-                db.collection("availableSlots").where("booked", "==", false).onSnapshot(snapshot => {
-                    const slotsContainer = document.getElementById("availableSlots");
-                    slotsContainer.innerHTML = "";
-                    snapshot.forEach(doc => {
-                        const slot = doc.data();
-                        const option = document.createElement("option");
-                        option.value = doc.id;
-                        option.textContent = `${slot.date} - ${slot.startTime} do ${slot.endTime}`;
-                        slotsContainer.appendChild(option);
+                
+                batch.commit()
+                    .then(() => {
+                        showNotification("Dostępne godziny zostały dodane.");
+                        document.getElementById("adminForm").reset();
+                        hideLoader('admin-loader');
+                    })
+                    .catch(err => {
+                        showNotification("Błąd podczas dodawania terminów: " + err.message, false);
+                        hideLoader('admin-loader');
                     });
-                });
+            });
+            
+            // Ładowanie dostępnych terminów
+            function loadAvailableSlots() {
+                const slotsContainer = document.getElementById("availableSlots");
+                slotsContainer.innerHTML = "<option value=''>Ładowanie terminów...</option>";
+                
+                // Pobieranie tylko przyszłych terminów
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const todayStr = today.toISOString().split('T')[0];
+                
+                db.collection("availableSlots")
+                    .where("booked", "==", false)
+                    .where("date", ">=", todayStr)
+                    .orderBy("date")
+                    .orderBy("startTime")
+                    .onSnapshot(snapshot => {
+                        slotsContainer.innerHTML = "<option value=''>Wybierz termin spotkania</option>";
+                        
+                        if (snapshot.empty) {
+                            slotsContainer.innerHTML = "<option value=''>Brak dostępnych terminów</option>";
+                            return;
+                        }
+                        
+                        snapshot.forEach(doc => {
+                            const slot = doc.data();
+                            const option = document.createElement("option");
+                            option.value = doc.id;
+                            
+                            // Formatowanie daty na bardziej przyjazną
+                            const dateObj = new Date(slot.date);
+                            const dayOfWeek = new Intl.DateTimeFormat('pl-PL', { weekday: 'long' }).format(dateObj);
+                            const formattedDate = new Intl.DateTimeFormat('pl-PL').format(dateObj);
+                            
+                            option.textContent = `${formattedDate} (${dayOfWeek}) - ${slot.startTime} do ${slot.endTime}`;
+                            slotsContainer.appendChild(option);
+                        });
+                    }, error => {
+                        console.error("Błąd pobierania terminów: ", error);
+                        slotsContainer.innerHTML = "<option value=''>Błąd pobierania terminów</option>";
+                        showNotification("Błąd pobierania terminów", false);
+                    });
             }
-            loadAvailableSlots();
-
-            // Wysyłka EmailJS po rezerwacji
+            
+            // Inicjalizacja kalendarza
+            function initCalendar() {
+                const calendarEl = document.getElementById('calendar');
+                if (!calendarEl) return;
+                
+                const calendar = new FullCalendar.Calendar(calendarEl, {
+                    initialView: 'dayGridMonth',
+                    headerToolbar: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'dayGridMonth,timeGridWeek'
+                    },
+                    locale: 'pl',
+                    events: function(info, successCallback, failureCallback) {
+                        db.collection("availableSlots")
+                            .where("booked", "==", false)
+                            .get()
+                            .then(querySnapshot => {
+                                const events = [];
+                                querySnapshot.forEach(doc => {
+                                    const slot = doc.data();
+                                    events.push({
+                                        id: doc.id,
+                                        title: `${slot.startTime} - ${slot.endTime}`,
+                                        start: `${slot.date}T${slot.startTime}`,
+                                        end: `${slot.date}T${slot.endTime}`,
+                                        allDay: false
+                                    });
+                                });
+                                successCallback(events);
+                            })
+                            .catch(error => {
+                                console.error("Błąd pobierania terminów dla kalendarza: ", error);
+                                failureCallback(error);
+                            });
+                    },
+                    eventClick: function(info) {
+                        // Przekierowanie do formularza rezerwacji z wybranym terminem
+                        document.querySelector('[data-tab="booking"]').click();
+                        
+                        // Wybierz odpowiedni termin w formularzu
+                        const select = document.getElementById('availableSlots');
+                        for (let i = 0; i < select.options.length; i++) {
+                            if (select.options[i].value === info.event.id) {
+                                select.selectedIndex = i;
+                                break;
+                            }
+                        }
+                    }
+                });
+                
+                calendar.render();
+            }
+            
+            // Obsługa formularza rezerwacji
             document.getElementById("bookingForm").addEventListener("submit", function(event) {
                 event.preventDefault();
                 
-                const templateParams = {
+                const fieldsToValidate = [
+                    'meetingType', 'name', 'email', 'phone', 
+                    'weddingDate', 'weddingPlace', 'availableSlots'
+                ];
+                
+                if (!validateForm('bookingForm', fieldsToValidate)) {
+                    return;
+                }
+                
+                showLoader('booking-loader');
+                
+                const slotId = document.getElementById("availableSlots").value;
+                
+                // Dane do zapisania w bazie danych
+                const bookingData = {
                     meetingType: document.getElementById("meetingType").value,
                     name: document.getElementById("name").value,
                     email: document.getElementById("email").value,
+                    phone: document.getElementById("phone").value,
                     weddingDate: document.getElementById("weddingDate").value,
                     weddingPlace: document.getElementById("weddingPlace").value,
                     services: document.getElementById("services").value,
                     message: document.getElementById("message").value,
-                    slot: document.getElementById("availableSlots").selectedOptions[0].textContent
+                    slotId: slotId,
+                    createdAt: new Date()
                 };
-
-                emailjs.send("service_f8ccgjc", "template_8x51wzj", templateParams)
-                    .then(function(response) {
-                        alert("Rezerwacja została wysłana!");
-                        console.log("SUCCESS!", response.status, response.text);
-                    }, function(error) {
-                        alert("Błąd wysyłania e-maila.");
-                        console.error("FAILED...", error);
+                
+                // Transakcja Firebase - oznaczenie terminu jako zarezerwowany i zapisanie rezerwacji
+                const slotRef = db.collection("availableSlots").doc(slotId);
+                const bookingRef = db.collection("bookings").doc();
+                
+                db.runTransaction(transaction => {
+                    return transaction.get(slotRef).then(slotDoc => {
+                        if (!slotDoc.exists) {
+                            throw new Error("Wybrany termin nie istnieje!");
+                        }
+                        
+                        const slotData = slotDoc.data();
+                        if (slotData.booked) {
+                            throw new Error("Termin został już zarezerwowany!");
+                        }
+                        
+                        // Wzbogać dane rezerwacji o dane terminu
+                        bookingData.slotDetails = {
+                            date: slotData.date,
+                            startTime: slotData.startTime,
+                            endTime: slotData.endTime
+                        };
+                        
+                        // Aktualizacja terminu
+                        transaction.update(slotRef, { booked: true });
+                        
+                        // Zapisanie rezerwacji
+                        transaction.set(bookingRef, bookingData);
+                    });
+                })
+                .then(() => {
+                    // Przygotowanie danych do wysłania email
+                    const slotText = document.getElementById("availableSlots").selectedOptions[0].textContent;
+                    
+                    const templateParams = {
+                        meetingType: bookingData.meetingType,
+                        name: bookingData.name,
+                        email: bookingData.email,
+                        phone: bookingData.phone,
+                        weddingDate: bookingData.weddingDate,
+                        weddingPlace: bookingData.weddingPlace,
+                        services: bookingData.services,
+                        message: bookingData.message,
+                        slot: slotText
+                    };
+                    
+                    // Wysłanie emaila
+                    return emailjs.send("service_f8ccgjc", "template_8x51wzj", templateParams);
+                })
+                .then(response => {
+                    hideLoader('booking-loader');
+                    document.getElementById("bookingForm").reset();
+                    document.getElementById("booking-success").style.display = "block";
+                    showNotification("Rezerwacja została przyjęta!");
+                    
+                    // Schowanie komunikatu po 5 sekundach
+                    setTimeout(() => {
+                        document.getElementById("booking-success").style.display = "none";
+                    }, 5000);
+                    
+                    // Odświeżenie listy dostępnych terminów
+                    loadAvailableSlots();
+                })
+                .catch(error => {
+                    hideLoader('booking-loader');
+                    showNotification("Błąd podczas rezerwacji: " + error.message, false);
+                });
+            });
+            
+            // Logowanie administratora
+            document.getElementById("login-btn").addEventListener("click", function() {
+                const email = document.getElementById("admin-email").value;
+                const password = document.getElementById("admin-password").value;
+                
+                if (!email || !password) {
+                    showNotification("Wprowadź email i hasło", false);
+                    return;
+                }
+                
+                showLoader('login-loader');
+                
+                auth.signInWithEmailAndPassword(email, password)
+                    .then(userCredential => {
+                        hideLoader('login-loader');
+                        document.getElementById("admin-login").style.display = "none";
+                        document.getElementById("admin-panel").style.display = "block";
+                        loadBookings();
+                    })
+                    .catch(error => {
+                        hideLoader('login-loader');
+                        showNotification("Błąd logowania: " + error.message, false);
                     });
             });
-        });
-    </script>
-    
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            text-align: center;
-            background-color: #121212;
-            color: #d4af37;
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            max-width: 600px;
-            margin: 30px auto;
-            padding: 20px;
-            background-color: #1e1e1e;
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
-        }
-        label {
-            display: block;
-            margin-top: 10px;
-            font-weight: bold;
-            text-align: left;
-            color: #fff;
-        }
-        input, select, button, textarea {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #d4af37;
-            border-radius: 5px;
-            background-color: #000;
-            color: #d4af37;
-        }
-        button {
-            background-color: #d4af37;
-            color: white;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h2>Dodawanie Dostępnych Terminów</h2>
-        <form id="adminForm">
-            <label>Data:</label>
-            <input type="date" id="adminDate" required>
-            <label>Godzina początkowa:</label>
-            <input type="time" id="startTime" required>
-            <label>Godzina końcowa:</label>
-            <input type="time" id="endTime" required>
-            <button type="submit">Dodaj dostępność</button>
-        </form>
-    </div>
-    
-    <div class="container">
-        <h2>Rezerwacja Spotkania</h2>
-        <form id="bookingForm">
-            <label for="meetingType">Rodzaj spotkania:</label>
-            <select id="meetingType" required>
-                <option value="online">Online</option>
-                <option value="biuro">W biurze</option>
-            </select>
-            <label for="name">Imię i nazwisko:</label>
-            <input type="text" id="name" required>
-            <label for="email">E-mail:</label>
-            <input type="email" id="email" required>
-            <label for="weddingDate">Data wesela:</label>
-            <input type="date" id="weddingDate" required>
-            <label for="weddingPlace">Miejsce wesela:</label>
-            <input type="text" id="weddingPlace" required>
-            <label for="services">Usługodawcy:</label>
-            <input type="text" id="services" required>
-            <label for="message">Dodatkowa wiadomość:</label>
-            <textarea id="message"></textarea>
-            <label for="availableSlots">Wybierz dostępny termin:</label>
-            <select id="availableSlots" required></select>
-            <button type="submit">Zarezerwuj</button>
-        </form>
-    </div>
-</body>
-</html>
+            
+            // Wylogowanie
+            document.getElementById("logout-btn").addEventListener("click", function() {
+                auth.signOut()
+                    .then(() => {
+                        document.getElementById("admin-login").style.display = "block";
+                        document.getElementById("admin-panel").style.display = "none";
+                        document.getElementById("admin-email").value = "";
+                        document.getElementById("admin-password").value = "";
+                    })
+                    .catch(error => {
+                        showNotification("Błąd wylogowania: " + error.message, false);
+                    });
+            });
+            
+            // Ładowanie rezerwacji dla administratora
+            function loadBookings() {
+                const bookingsListElement = document.getElementById("bookings-list");
+                bookingsListElement.innerHTML = "Ładowanie rezerwacji...";
+                
+                db.collection("bookings")
+                    .orderBy("createdAt", "desc")
+                    .limit(10)
+                    .get()
+                    .then(
