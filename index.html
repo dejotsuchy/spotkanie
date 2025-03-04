@@ -1,11 +1,37 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
+    <!-- AGRESYWNE BLOKOWANIE OBRAZÓW - NOWE -->
+    <style>
+    /* Całkowite wyłączenie wszystkich obrazów */
+    img, [style*="background-image"] {
+      display: none !important;
+      background-image: none !important;
+    }
+    
+    /* Nawet ukryte obrazy mogą próbować się ładować, całkowicie je usuniemy */
+    img[src^="data:"], *[data-src^="data:"] {
+      display: none !important;
+      visibility: hidden !important;
+      width: 0 !important;
+      height: 0 !important;
+      position: absolute !important;
+      z-index: -9999 !important;
+      opacity: 0 !important;
+    }
+    
+    /* Zapobiegaj ładowaniu obrazów przez FullCalendar */
+    .fc-icon, .fc-button-icon, [class*="fc-icon-"] {
+      background-image: none !important;
+      font-family: Arial, sans-serif !important;
+    }
+    </style>
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rezerwacja Terminów - Twoja Firma</title>
     
-    <!-- Firebase SDK -->
+    <!-- Firebase SDK - Zaktualizowane linki do Firebase 10.7.1-->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -20,6 +46,7 @@
     <!-- FullCalendar - widok kalendarza -->
     <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css' rel='stylesheet' />
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/locales/pl.js'></script>
     
     <style>
         :root {
@@ -190,6 +217,157 @@
                 margin-bottom: 5px;
             }
         }
+
+        /* Style dla listy rezerwacji */
+        .booking-item {
+            background-color: var(--dark-bg);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            text-align: left;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .booking-item h4 {
+            margin: 0 0 10px 0;
+            color: var(--primary-color);
+        }
+        
+        .booking-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .booking-info div {
+            flex: 1 1 45%;
+        }
+        
+        .booking-info span {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        /* NOWE STYLE - Ukrywanie problematycznych ikon i obrazów */
+        .fc-icon {
+            background-image: none !important;
+        }
+        
+        .fc-icon-chevron-left:before {
+            content: "<";
+        }
+        
+        .fc-icon-chevron-right:before {
+            content: ">";
+        }
+        
+        .fc button .fc-icon {
+            font-family: Arial, sans-serif !important;
+        }
+        
+        .fc .fc-button-primary {
+            background-color: var(--primary-color) !important;
+            border-color: var(--primary-color) !important;
+        }
+        
+        img[src^="data:"] {
+            display: none !important;
+        }
+        
+        /* Style dla uproszczonego kalendarza */
+        .simple-calendar {
+            background-color: var(--card-bg);
+            border-radius: 5px;
+            padding: 20px;
+        }
+        
+        .simple-calendar-dates {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .simple-calendar-date {
+            flex: 1 1 300px;
+            background-color: var(--dark-bg);
+            border-radius: 5px;
+            padding: 15px;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .simple-calendar-date h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+            font-size: 16px;
+        }
+        
+        .simple-calendar-slots {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .simple-calendar-slot {
+            background-color: var(--primary-color);
+            color: var(--dark-bg);
+            padding: 8px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            text-align: center;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+        
+        .simple-calendar-slot:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        
+        .simple-calendar-empty {
+            text-align: center;
+            padding: 40px 20px;
+            background-color: var(--dark-bg);
+            border-radius: 5px;
+            color: var(--text-color);
+        }
+        
+        .simple-calendar-legend {
+            border-top: 1px solid var(--primary-color);
+            border-bottom: 1px solid var(--primary-color);
+            padding: 10px 0;
+            margin-bottom: 10px;
+            text-align: center;
+            color: var(--text-color);
+        }
+        
+        /* Dodatkowe style dla konsoli debugowania */
+        #debug-console {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 150px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            font-family: monospace;
+            font-size: 12px;
+            padding: 10px;
+            overflow-y: auto;
+            z-index: 9999;
+            display: none;
+        }
+        
+        .debug-entry {
+            margin-bottom: 4px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 4px;
+        }
+        
+        .debug-info { color: #4caf50; }
+        .debug-warn { color: #ff9800; }
+        .debug-error { color: #f44336; }
     </style>
 </head>
 <body>
@@ -332,11 +510,149 @@
         </div>
     </div>
     
+    <!-- Konsola debugowania (ukryta) -->
+    <div id="debug-console"></div>
+    
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            // Firebase konfiguracja - w prawdziwej aplikacji te informacje powinny być ukryte
+            // Agresywne czyszczenie obrazów - NOWE
+            function aggressiveImageCleanup() {
+                try {
+                    // Usuwanie wszystkich obrazów korzystających z data URL
+                    const images = document.querySelectorAll('img[src^="data:"]');
+                    images.forEach(img => {
+                        img.parentNode.removeChild(img);
+                    });
+                    
+                    // Usuwanie wszystkich elementów z tłem używającym data URL
+                    document.querySelectorAll('*').forEach(el => {
+                        const style = window.getComputedStyle(el);
+                        if (style.backgroundImage && style.backgroundImage.includes('data:')) {
+                            el.style.backgroundImage = 'none';
+                        }
+                    });
+                    
+                    // Usuwanie wszystkich elementów FC-icon
+                    document.querySelectorAll('.fc-icon').forEach(icon => {
+                        if (icon.classList.contains('fc-icon-chevron-left')) {
+                            icon.textContent = '<';
+                        } else if (icon.classList.contains('fc-icon-chevron-right')) {
+                            icon.textContent = '>';
+                        }
+                    });
+                    
+                    // Przechwycenie wszelkich prób dodania obrazów
+                    const originalCreateElement = document.createElement;
+                    if (document.createElement.toString().indexOf('function') > -1) {
+                        document.createElement = function(tagName) {
+                            const element = originalCreateElement.call(document, tagName);
+                            if (tagName.toLowerCase() === 'img') {
+                                // Przechwycenie ustawienia atrybutu src
+                                const originalSetAttribute = element.setAttribute;
+                                element.setAttribute = function(name, value) {
+                                    if (name.toLowerCase() === 'src' && value && value.startsWith('data:')) {
+                                        console.warn('Zablokowano próbę ustawienia data: URL dla img');
+                                        return;
+                                    }
+                                    originalSetAttribute.call(this, name, value);
+                                };
+                            }
+                            return element;
+                        };
+                    }
+                } catch (e) {
+                    console.error("Błąd podczas czyszczenia obrazów:", e);
+                }
+            }
+            
+            // Uruchom czyszczenie obrazów natychmiast i co 200ms
+            aggressiveImageCleanup();
+            setInterval(aggressiveImageCleanup, 200);
+            
+            // Konfiguracja aplikacji
+            const APP_CONFIG = {
+                debug: true,  // Włącz/wyłącz debugowanie
+                debugConsole: false, // Włącz/wyłącz konsolę debugowania na stronie
+                retryAttempts: {
+                    firebase: 3,
+                    calendar: 3
+                },
+                delays: {
+                    firebaseInit: 500,
+                    calendarInit: 500,
+                    imageCleanup: [500, 1500, 3000]
+                },
+                timeouts: {
+                    firebase: 5000,
+                    calendar: 8000
+                }
+            };
+            
+            // Statyczne zmienne śledżące stan aplikacji
+            const APP_STATE = {
+                firebaseInitialized: false,
+                firebaseInitAttempts: 0,
+                calendarInitialized: false,
+                calendarInitAttempts: 0,
+                componentsReady: {
+                    firebase: false,
+                    firestore: false,
+                    auth: false,
+                    emailjs: false,
+                    fullcalendar: false
+                }
+            };
+            
+            // Rozszerzona funkcja debugowania
+            function debug(message, type = "info") {
+                if (!APP_CONFIG.debug) return;
+                
+                const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+                const prefix = `[${timestamp}][DEBUG][${type}]: `;
+                
+                switch(type) {
+                    case "error":
+                        console.error(prefix + message);
+                        break;
+                    case "warn":
+                        console.warn(prefix + message);
+                        break;
+                    default:
+                        console.log(prefix + message);
+                }
+                
+                // Opcjonalnie: Zapisuj logi do elementu na stronie dla łatwiejszego debugowania
+                if (APP_CONFIG.debugConsole) {
+                    const debugConsole = document.getElementById('debug-console');
+                    if (debugConsole) {
+                        if (debugConsole.style.display === 'none') {
+                            debugConsole.style.display = 'block';
+                        }
+                        
+                        const entry = document.createElement('div');
+                        entry.className = `debug-entry debug-${type}`;
+                        entry.textContent = `${timestamp}: ${message}`;
+                        debugConsole.appendChild(entry);
+                        debugConsole.scrollTop = debugConsole.scrollHeight;
+                    }
+                }
+            }
+            
+            // Funkcja sprawdzająca czy element istnieje
+            function elementExists(id) {
+                const element = document.getElementById(id);
+                if (!element) {
+                    debug(`Element o ID "${id}" nie istnieje.`, "error");
+                    return false;
+                }
+                return true;
+            }
+            
+            debug("Inicjalizacja aplikacji...");
+            
+            // Firebase konfiguracja
             const firebaseConfig = {
-                apiKey: "YOUR_API_KEY", // Zastąp swoim prawdziwym kluczem lub użyj zmiennych środowiskowych
+                apiKey: "AIzaSyAeWykrY_aL427Q-aFLOs-K0GOBgmGhEgs",
                 authDomain: "projekt-rezerwacja.firebaseapp.com",
                 projectId: "projekt-rezerwacja",
                 storageBucket: "projekt-rezerwacja.appspot.com",
@@ -344,35 +660,6 @@
                 appId: "1:118180989579:web:dd3e4487c40d0b3863628e",
                 measurementId: "G-KBZ1VVJ9QH"
             };
-            
-            // Inicjalizacja Firebase
-            firebase.initializeApp(firebaseConfig);
-            const db = firebase.firestore();
-            const auth = firebase.auth();
-            
-            // Inicjalizacja EmailJS
-            emailjs.init("YOUR_EMAILJS_KEY"); // Zastąp swoim prawdziwym kluczem
-            
-            // Obsługa zakładek
-            const tabs = document.querySelectorAll('.tab');
-            tabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const targetTab = tab.dataset.tab;
-                    
-                    // Aktywna zakładka
-                    tabs.forEach(t => t.classList.remove('active'));
-                    tab.classList.add('active');
-                    
-                    // Aktywna sekcja
-                    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-                    document.getElementById(`${targetTab}-section`).classList.add('active');
-                    
-                    // Inicjalizacja kalendarza przy przełączeniu na jego widok
-                    if (targetTab === 'calendar') {
-                        initCalendar();
-                    }
-                });
-            });
             
             // Funkcje pomocnicze
             function showNotification(message, isSuccess = true) {
@@ -387,11 +674,15 @@
             }
             
             function showLoader(id) {
-                document.getElementById(id).style.display = 'block';
+                if (elementExists(id)) {
+                    document.getElementById(id).style.display = 'block';
+                }
             }
             
             function hideLoader(id) {
-                document.getElementById(id).style.display = 'none';
+                if (elementExists(id)) {
+                    document.getElementById(id).style.display = 'none';
+                }
             }
             
             function validateForm(formId, fieldsToValidate) {
@@ -399,17 +690,22 @@
                 
                 fieldsToValidate.forEach(field => {
                     const element = document.getElementById(field);
+                    if (!element) {
+                        debug(`Element o ID "${field}" nie istnieje.`, "warn");
+                        return; // Pomiń to pole
+                    }
+                    
                     const errorElement = document.getElementById(`${field}-error`);
                     
                     if (!element.value.trim()) {
-                        errorElement.style.display = 'block';
+                        if (errorElement) errorElement.style.display = 'block';
                         isValid = false;
                     } else {
-                        errorElement.style.display = 'none';
+                        if (errorElement) errorElement.style.display = 'none';
                         
                         // Dodatkowa walidacja dla emaila
                         if (field === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(element.value)) {
-                            errorElement.style.display = 'block';
+                            if (errorElement) errorElement.style.display = 'block';
                             isValid = false;
                         }
                     }
@@ -418,321 +714,1075 @@
                 return isValid;
             }
             
-            // Logika dzielenia na godzinowe sloty
-            function splitIntoHourlySlots(date, startTime, endTime) {
-                let slots = [];
-                let start = new Date(`${date}T${startTime}`);
-                let end = new Date(`${date}T${endTime}`);
-                
-                // Sprawdzenie czy data jest w przeszłości
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const slotDate = new Date(date);
-                slotDate.setHours(0, 0, 0, 0);
-                
-                if (slotDate < today) {
-                    showNotification("Nie można dodać terminów z przeszłości!", false);
-                    return [];
-                }
-                
-                while (start < end) {
-                    let nextHour = new Date(start);
-                    nextHour.setHours(nextHour.getHours() + 1);
-                    if (nextHour > end) break;
-                    
-                    slots.push({
-                        date: date,
-                        startTime: start.toTimeString().substring(0, 5),
-                        endTime: nextHour.toTimeString().substring(0, 5),
-                        booked: false,
-                        createdAt: new Date()
-                    });
-                    
-                    start = nextHour;
-                }
-                return slots;
+            // Czyszczenie problematycznych obrazów
+            function cleanupImages() {
+                debug("Czyszczenie problematycznych obrazów");
+                aggressiveImageCleanup();
             }
             
-            // Admin panel - dodawanie dostępności
-            document.getElementById("adminForm").addEventListener("submit", function(event) {
-                event.preventDefault();
+            // Inicjalizacja Firebase
+            function initializeFirebase() {
+                debug("Inicjalizacja Firebase...");
                 
-                if (!validateForm('adminForm', ['adminDate', 'startTime', 'endTime'])) {
-                    return;
+                try {
+                    // Sprawdź czy Firebase jest dostępny
+                    if (typeof firebase === 'undefined') {
+                        debug("Firebase nie jest dostępny!", "error");
+                        APP_STATE.componentsReady.firebase = false;
+                        return false;
+                    }
+                    
+                    APP_STATE.componentsReady.firebase = true;
+                    
+                    // Sprawdź czy Firebase nie jest już zainicjalizowany
+                    if (!firebase.apps.length) {
+                        firebase.initializeApp(firebaseConfig);
+                        debug("Firebase zainicjalizowany pomyślnie");
+                    } else {
+                        debug("Firebase już zainicjalizowany (wykryto istniejącą aplikację)");
+                    }
+                    
+                    // Sprawdź dostępność Firestore i Auth
+                    if (firebase.firestore) {
+                        APP_STATE.componentsReady.firestore = true;
+                        debug("Firebase Firestore jest dostępny");
+                    } else {
+                        debug("Firebase Firestore nie jest dostępny!", "error");
+                    }
+                    
+                    if (firebase.auth) {
+                        APP_STATE.componentsReady.auth = true;
+                        debug("Firebase Auth jest dostępny");
+                    } else {
+                        debug("Firebase Auth nie jest dostępny!", "error");
+                    }
+                    
+                    // Inicjalizacja EmailJS
+                    try {
+                        if (typeof emailjs !== 'undefined') {
+                            emailjs.init("xqyVbSjeXibISoZml");
+                            APP_STATE.componentsReady.emailjs = true;
+                            debug("EmailJS zainicjalizowany");
+                        } else {
+                            debug("EmailJS nie jest dostępny", "warn");
+                        }
+                    } catch (error) {
+                        debug(`Błąd inicjalizacji EmailJS: ${error.message}`, "warn");
+                    }
+                    
+                    return true;
+                } catch (error) {
+                    debug(`Błąd inicjalizacji Firebase: ${error.message}`, "error");
+                    return false;
                 }
-                
-                showLoader('admin-loader');
-                
-                const date = document.getElementById("adminDate").value;
-                const startTime = document.getElementById("startTime").value;
-                const endTime = document.getElementById("endTime").value;
-                const slots = splitIntoHourlySlots(date, startTime, endTime);
-                
-                if (slots.length === 0) {
-                    hideLoader('admin-loader');
-                    return;
-                }
-                
-                let batch = db.batch();
-                slots.forEach(slot => {
-                    let docRef = db.collection("availableSlots").doc();
-                    batch.set(docRef, slot);
-                });
-                
-                batch.commit()
-                    .then(() => {
-                        showNotification("Dostępne godziny zostały dodane.");
-                        document.getElementById("adminForm").reset();
-                        hideLoader('admin-loader');
-                    })
-                    .catch(err => {
-                        showNotification("Błąd podczas dodawania terminów: " + err.message, false);
-                        hideLoader('admin-loader');
-                    });
-            });
+            }
             
-            // Ładowanie dostępnych terminów
-            function loadAvailableSlots() {
-                const slotsContainer = document.getElementById("availableSlots");
-                slotsContainer.innerHTML = "<option value=''>Ładowanie terminów...</option>";
-                
-                // Pobieranie tylko przyszłych terminów
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const todayStr = today.toISOString().split('T')[0];
-                
-                db.collection("availableSlots")
-                    .where("booked", "==", false)
-                    .where("date", ">=", todayStr)
-                    .orderBy("date")
-                    .orderBy("startTime")
-                    .onSnapshot(snapshot => {
-                        slotsContainer.innerHTML = "<option value=''>Wybierz termin spotkania</option>";
+            // Inicjalizacja aplikacji z obsługą błędów
+            try {
+                // Inicjalizacja Firebase
+                if (!initializeFirebase()) {
+                    debug("Nie można zainicjalizować Firebase, przełączenie na tryb offline", "error");
+                    showNotification("Wystąpił problem z połączeniem. Niektóre funkcje mogą być niedostępne.", false);
+                    setupLocalFallbacks();
+                } else {
+                    // Ustaw listener autentykacji
+                    const auth = firebase.auth();
+                    auth.onAuthStateChanged(user => {
+                        debug("Wywołano onAuthStateChanged, użytkownik: " + (user ? "zalogowany" : "niezalogowany"));
                         
-                        if (snapshot.empty) {
-                            slotsContainer.innerHTML = "<option value=''>Brak dostępnych terminów</option>";
+                        if (!elementExists("admin-login") || !elementExists("admin-panel")) {
+                            debug("Brak elementów panelu administratora", "warn");
                             return;
                         }
                         
-                        snapshot.forEach(doc => {
-                            const slot = doc.data();
-                            const option = document.createElement("option");
-                            option.value = doc.id;
-                            
-                            // Formatowanie daty na bardziej przyjazną
-                            const dateObj = new Date(slot.date);
-                            const dayOfWeek = new Intl.DateTimeFormat('pl-PL', { weekday: 'long' }).format(dateObj);
-                            const formattedDate = new Intl.DateTimeFormat('pl-PL').format(dateObj);
-                            
-                            option.textContent = `${formattedDate} (${dayOfWeek}) - ${slot.startTime} do ${slot.endTime}`;
-                            slotsContainer.appendChild(option);
-                        });
-                    }, error => {
-                        console.error("Błąd pobierania terminów: ", error);
-                        slotsContainer.innerHTML = "<option value=''>Błąd pobierania terminów</option>";
-                        showNotification("Błąd pobierania terminów", false);
-                    });
-            }
-            
-            // Inicjalizacja kalendarza
-            function initCalendar() {
-                const calendarEl = document.getElementById('calendar');
-                if (!calendarEl) return;
-                
-                const calendar = new FullCalendar.Calendar(calendarEl, {
-                    initialView: 'dayGridMonth',
-                    headerToolbar: {
-                        left: 'prev,next today',
-                        center: 'title',
-                        right: 'dayGridMonth,timeGridWeek'
-                    },
-                    locale: 'pl',
-                    events: function(info, successCallback, failureCallback) {
-                        db.collection("availableSlots")
-                            .where("booked", "==", false)
-                            .get()
-                            .then(querySnapshot => {
-                                const events = [];
-                                querySnapshot.forEach(doc => {
-                                    const slot = doc.data();
-                                    events.push({
-                                        id: doc.id,
-                                        title: `${slot.startTime} - ${slot.endTime}`,
-                                        start: `${slot.date}T${slot.startTime}`,
-                                        end: `${slot.date}T${slot.endTime}`,
-                                        allDay: false
-                                    });
-                                });
-                                successCallback(events);
-                            })
-                            .catch(error => {
-                                console.error("Błąd pobierania terminów dla kalendarza: ", error);
-                                failureCallback(error);
-                            });
-                    },
-                    eventClick: function(info) {
-                        // Przekierowanie do formularza rezerwacji z wybranym terminem
-                        document.querySelector('[data-tab="booking"]').click();
+                        const adminLoginElement = document.getElementById("admin-login");
+                        const adminPanelElement = document.getElementById("admin-panel");
                         
-                        // Wybierz odpowiedni termin w formularzu
-                        const select = document.getElementById('availableSlots');
-                        for (let i = 0; i < select.options.length; i++) {
-                            if (select.options[i].value === info.event.id) {
-                                select.selectedIndex = i;
-                                break;
+                        if (user) {
+                            debug("Użytkownik jest zalogowany");
+                            adminLoginElement.style.display = "none";
+                            adminPanelElement.style.display = "block";
+                            loadBookings();
+                        } else {
+                            debug("Użytkownik nie jest zalogowany");
+                            adminLoginElement.style.display = "block";
+                            adminPanelElement.style.display = "none";
+                        }
+                    });
+                }
+                
+                // Zaplanowane czyszczenie obrazów
+                APP_CONFIG.delays.imageCleanup.forEach(delay => {
+                    setTimeout(cleanupImages, delay);
+                });
+                
+                // Obsługa zakładek
+                const tabs = document.querySelectorAll('.tab');
+                tabs.forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        const targetTab = tab.dataset.tab;
+                        debug(`Przełączanie na zakładkę: ${targetTab}`);
+                        
+                        // Aktywna zakładka
+                        tabs.forEach(t => t.classList.remove('active'));
+                        tab.classList.add('active');
+                        
+                        // Aktywna sekcja
+                        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+                        const targetSection = document.getElementById(`${targetTab}-section`);
+                        if (targetSection) {
+                            targetSection.classList.add('active');
+                            
+                            // Inicjalizacja kalendarza przy przełączeniu na jego widok
+                            if (targetTab === 'calendar') {
+                                debug("Przełączono na widok kalendarza");
+                                
+                                if (typeof FullCalendar !== 'undefined') {
+                                    debug("Inicjalizacja kalendarza...");
+                                    setTimeout(initCalendar, APP_CONFIG.delays.calendarInit);
+                                } else {
+                                    debug("FullCalendar nie jest dostępny, wyświetlanie zastępczego widoku", "warn");
+                                    renderSimpleCalendarView();
+                                }
+                            }
+                        } else {
+                            debug(`Nie znaleziono sekcji dla zakładki: ${targetTab}`, "error");
+                        }
+                    });
+                });
+                
+                // Logika dzielenia na godzinowe sloty
+                function splitIntoHourlySlots(date, startTime, endTime) {
+                    let slots = [];
+                    let start = new Date(`${date}T${startTime}`);
+                    let end = new Date(`${date}T${endTime}`);
+                    
+                    // Sprawdzenie czy data jest w przeszłości
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const slotDate = new Date(date);
+                    slotDate.setHours(0, 0, 0, 0);
+                    
+                    if (slotDate < today) {
+                        showNotification("Nie można dodać terminów z przeszłości!", false);
+                        return [];
+                    }
+                    
+                    while (start < end) {
+                        let nextHour = new Date(start);
+                        nextHour.setHours(nextHour.getHours() + 1);
+                        if (nextHour > end) break;
+                        
+                        slots.push({
+                            date: date,
+                            startTime: start.toTimeString().substring(0, 5),
+                            endTime: nextHour.toTimeString().substring(0, 5),
+                            booked: false,
+                            createdAt: new Date()
+                        });
+                        
+                        start = nextHour;
+                    }
+                    
+                    debug(`Utworzono ${slots.length} slotów godzinowych`);
+                    return slots;
+                }
+                
+                // Funkcja inicjalizująca kalendarz - ZMODYFIKOWANA
+                let calendar = null;
+                
+                function initCalendar() {
+                    debug("Funkcja initCalendar wywołana");
+                    
+                    // Wykonaj agresywne czyszczenie obrazów
+                    aggressiveImageCleanup();
+                    
+                    if (APP_STATE.calendarInitAttempts >= APP_CONFIG.retryAttempts.calendar) {
+                        debug("Przekroczono maksymalną liczbę prób inicjalizacji kalendarza", "error");
+                        showNotification("Nie udało się zainicjalizować kalendarza", false);
+                        renderSimpleCalendarView();
+                        return;
+                    }
+                    
+                    APP_STATE.calendarInitAttempts++;
+                    
+                    const calendarEl = document.getElementById('calendar');
+                    if (!calendarEl) {
+                        debug("Element kalendarza nie został znaleziony!", "error");
+                        return;
+                    }
+                    
+                    if (typeof FullCalendar === 'undefined') {
+                        debug("Biblioteka FullCalendar nie jest dostępna!", "error");
+                        renderSimpleCalendarView();
+                        return;
+                    }
+                    
+                    debug("Element kalendarza znaleziony, tworzenie instancji FullCalendar");
+                    
+                    if (calendar !== null) {
+                        calendar.destroy();
+                        debug("Zniszczono poprzednią instancję kalendarza");
+                    }
+                    
+                    try {
+                        calendar = new FullCalendar.Calendar(calendarEl, {
+                            initialView: 'dayGridMonth',
+                            headerToolbar: {
+                                left: 'prev,next today',
+                                center: 'title',
+                                right: 'dayGridMonth,timeGridWeek'
+                            },
+                            locale: 'pl',
+                            height: 'auto',
+                            
+                            // Wyłącz ikony i użyj prostego tekstu
+                            buttonText: {
+                                today: 'Dzisiaj',
+                                month: 'Miesiąc',
+                                week: 'Tydzień',
+                                day: 'Dzień'
+                            },
+                            
+                            // Wyłącz domyślne ikony
+                            bootstrapFontAwesome: false,
+                            
+                            // NOWE - Wyłączenie obrazów
+                            themeSystem: 'standard',
+                            
+                            // Dodano obsługę błędów przy ładowaniu eventów
+                            events: function(info, successCallback, failureCallback) {
+                                debug("Pobieranie wydarzeń kalendarza");
+                                
+                                if (!APP_STATE.componentsReady.firestore) {
+                                    debug("Firestore nie jest dostępny", "error");
+                                    failureCallback(new Error("Brak połączenia z bazą danych"));
+                                    return;
+                                }
+                                
+                                try {
+                                    const db = firebase.firestore();
+                                    db.collection("availableSlots")
+                                        .where("booked", "==", false)
+                                        .get()
+                                        .then(querySnapshot => {
+                                            const events = [];
+                                            querySnapshot.forEach(doc => {
+                                                const slot = doc.data();
+                                                events.push({
+                                                    id: doc.id,
+                                                    title: `${slot.startTime} - ${slot.endTime}`,
+                                                    start: `${slot.date}T${slot.startTime}`,
+                                                    end: `${slot.date}T${slot.endTime}`,
+                                                    allDay: false
+                                                });
+                                            });
+                                            debug(`Znaleziono ${events.length} dostępnych wydarzeń`);
+                                            successCallback(events);
+                                            
+                                            // Czyszczenie obrazów po załadowaniu wydarzeń
+                                            setTimeout(aggressiveImageCleanup, 100);
+                                        })
+                                        .catch(error => {
+                                            console.error("Błąd pobierania terminów dla kalendarza: ", error);
+                                            debug(`Błąd podczas pobierania terminów: ${error.message}`, "error");
+                                            failureCallback(error);
+                                            showNotification("Błąd podczas ładowania kalendarza", false);
+                                        });
+                                } catch (e) {
+                                    console.error("Krytyczny błąd w funkcji pobierania wydarzeń: ", e);
+                                    debug(`Krytyczny błąd: ${e.message}`, "error");
+                                    failureCallback(e);
+                                    showNotification("Krytyczny błąd podczas ładowania kalendarza", false);
+                                }
+                            },
+                            
+                            // Niestandardowy renderer nagłówka kalendarza
+                            viewDidMount: function() {
+                                // Usuwanie problematycznych obrazów po załadowaniu widoku
+                                aggressiveImageCleanup();
+                                debug("Widok kalendarza zamontowany, usunięto niepotrzebne obrazy");
+                            },
+                            
+                            // Uproszczona obsługa kliknięcia wydarzenia
+                            eventClick: function(info) {
+                                debug(`Kliknięto wydarzenie z ID: ${info.event.id}`);
+                                // Przekierowanie do formularza rezerwacji z wybranym terminem
+                                document.querySelector('[data-tab="booking"]').click();
+                                
+                                setTimeout(() => {
+                                    // Wybierz odpowiedni termin w formularzu z opóźnieniem
+                                    const select = document.getElementById('availableSlots');
+                                    if (select) {
+                                        for (let i = 0; i < select.options.length; i++) {
+                                            if (select.options[i].value === info.event.id) {
+                                                select.selectedIndex = i;
+                                                break;
+                                            }
+                                        }
+                                    } else {
+                                        debug("Nie znaleziono selecta availableSlots", "warn");
+                                    }
+                                }, 300);
+                            },
+                            
+                            // NOWE - Wywołaj czyszczenie po renderowaniu
+                            eventDidMount: function() {
+                                aggressiveImageCleanup();
+                            },
+                            datesDidUpdate: function() {
+                                aggressiveImageCleanup();
+                            }
+                        });
+                        
+                        calendar.render();
+                        debug("Kalendarz wyrenderowany pomyślnie");
+                        APP_STATE.calendarInitialized = true;
+                        
+                        // Czyszczenie obrazów po renderowaniu
+                        setTimeout(aggressiveImageCleanup, 300);
+                    } catch (error) {
+                        console.error("Błąd podczas inicjalizacji kalendarza:", error);
+                        debug(`Błąd podczas inicjalizacji kalendarza: ${error.message}`, "error");
+                        
+                        if (APP_STATE.calendarInitAttempts < APP_CONFIG.retryAttempts.calendar) {
+                            debug(`Próba ponownej inicjalizacji kalendarza (${APP_STATE.calendarInitAttempts + 1}/${APP_CONFIG.retryAttempts.calendar})`, "warn");
+                            setTimeout(initCalendar, 1000);
+                        } else {
+                            showNotification("Błąd podczas inicjalizacji kalendarza", false);
+                            renderSimpleCalendarView();
+                        }
+                    }
+                }
+                
+                // Zapasowy prosty widok kalendarza
+                function renderSimpleCalendarView() {
+                    debug("Renderowanie uproszczonego widoku kalendarza");
+                    const calendarEl = document.getElementById('calendar');
+                    
+                    if (!calendarEl) {
+                        debug("Element kalendarza nie został znaleziony!", "error");
+                        return;
+                    }
+                    
+                    if (!APP_STATE.componentsReady.firestore) {
+                        calendarEl.innerHTML = `
+                            <div style="padding: 20px; background-color: var(--card-bg); border: 1px solid var(--primary-color); border-radius: 5px;">
+                                <h3>Kalendarz tymczasowo niedostępny</h3>
+                                <p>Przepraszamy, wystąpił problem z połączeniem do bazy danych.</p>
+                                <p>Prosimy spróbować później lub skorzystać z formularza rezerwacji.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    const db = firebase.firestore();
+                    
+                    // Pobierz dostępne terminy
+                    db.collection("availableSlots")
+                        .where("booked", "==", false)
+                        .orderBy("date")
+                        .orderBy("startTime")
+                        .get()
+                        .then(snapshot => {
+                            if (snapshot.empty) {
+                                calendarEl.innerHTML = `
+                                    <div class="simple-calendar-empty">
+                                        <p>Brak dostępnych terminów.</p>
+                                    </div>
+                                `;
+                                return;
+                            }
+                            
+                            // Grupuj terminy według dat
+                            const dateGroups = {};
+                            snapshot.forEach(doc => {
+                                const slot = doc.data();
+                                if (!dateGroups[slot.date]) {
+                                    dateGroups[slot.date] = [];
+                                }
+                                dateGroups[slot.date].push({
+                                    id: doc.id,
+                                    ...slot
+                                });
+                            });
+                            
+                            // Utwórz prosty widok kalendarza
+                            let calendarHTML = `
+                                <div class="simple-calendar">
+                                    <h3>Dostępne terminy</h3>
+                                    <div class="simple-calendar-legend">
+                                        <p>Kliknij na termin, aby przejść do formularza rezerwacji.</p>
+                                    </div>
+                                    <div class="simple-calendar-dates">
+                            `;
+                            
+                            // Sortowanie dat
+                            const sortedDates = Object.keys(dateGroups).sort();
+                            
+                            sortedDates.forEach(date => {
+                                try {
+                                    const dateObj = new Date(date);
+                                    const dayOfWeek = new Intl.DateTimeFormat('pl-PL', { weekday: 'long' }).format(dateObj);
+                                    const formattedDate = new Intl.DateTimeFormat('pl-PL').format(dateObj);
+                                    
+                                    calendarHTML += `
+                                        <div class="simple-calendar-date">
+                                            <h4>${formattedDate} (${dayOfWeek})</h4>
+                                            <div class="simple-calendar-slots">
+                                    `;
+                                    
+                                    dateGroups[date].forEach(slot => {
+                                        calendarHTML += `
+                                            <div class="simple-calendar-slot" data-slot-id="${slot.id}">
+                                                ${slot.startTime} - ${slot.endTime}
+                                            </div>
+                                        `;
+                                    });
+                                    
+                                    calendarHTML += `
+                                            </div>
+                                        </div>
+                                    `;
+                                } catch (error) {
+                                    debug(`Błąd formatowania daty: ${error.message}`, "warn");
+                                }
+                            });
+                            
+                            calendarHTML += `
+                                    </div>
+                                </div>
+                            `;
+                            
+                            calendarEl.innerHTML = calendarHTML;
+                            
+                            // Dodaj obsługę kliknięć
+                            document.querySelectorAll('.simple-calendar-slot').forEach(slotElement => {
+                                slotElement.addEventListener('click', function() {
+                                    const slotId = this.getAttribute('data-slot-id');
+                                    debug(`Kliknięto slot z ID: ${slotId}`);
+                                    
+                                    // Przekierowanie do formularza rezerwacji
+                                    document.querySelector('[data-tab="booking"]').click();
+                                    
+                                    setTimeout(() => {
+                                        const select = document.getElementById('availableSlots');
+                                        if (select) {
+                                            for (let i = 0; i < select.options.length; i++) {
+                                                if (select.options[i].value === slotId) {
+                                                    select.selectedIndex = i;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }, 300);
+                                });
+                            });
+                            
+                            debug("Uproszczony kalendarz wyrenderowany pomyślnie");
+                        })
+                        .catch(error => {
+                            debug(`Błąd podczas renderowania uproszczonego kalendarza: ${error.message}`, "error");
+                            calendarEl.innerHTML = `
+                                <div style="padding: 20px; background-color: var(--card-bg); border: 1px solid var(--primary-color); border-radius: 5px;">
+                                    <h3>Przepraszamy, wystąpił błąd</h3>
+                                    <p>Nie udało się załadować dostępnych terminów. Prosimy spróbować później lub skorzystać z formularza rezerwacji.</p>
+                                </div>
+                            `;
+                        });
+                }
+                
+                // Konfiguracja lokalnych zastępników w przypadku problemów z Firebase
+                function setupLocalFallbacks() {
+                    debug("Ustawianie lokalnych zastępników dla funkcji bazodanowych");
+                    
+                    // Zastępczy formularz bez dodawania do bazy danych
+                    const bookingForm = document.getElementById("bookingForm");
+                    if (bookingForm) {
+                        // Usuń obecne listenery
+                        const newBookingForm = bookingForm.cloneNode(true);
+                        bookingForm.parentNode.replaceChild(newBookingForm, bookingForm);
+                        
+                        // Dodaj nowy listener, który tylko pokazuje potwierdzenie
+                        newBookingForm.addEventListener("submit", function(event) {
+                            event.preventDefault();
+                            debug("Próba wysłania formularza rezerwacji w trybie offline");
+                            
+                            const fieldsToValidate = [
+                                'meetingType', 'name', 'email', 'phone', 
+                                'weddingDate', 'weddingPlace', 'availableSlots'
+                            ];
+                            
+                            if (!validateForm('bookingForm', fieldsToValidate)) {
+                                debug("Walidacja formularza rezerwacji nie powiodła się");
+                                return;
+                            }
+                            
+                            // Wyświetl informację o trybie offline
+                            showLoader('booking-loader');
+                            
+                            setTimeout(() => {
+                                hideLoader('booking-loader');
+                                const successElement = document.getElementById("booking-success");
+                                if (successElement) {
+                                    successElement.style.display = "block";
+                                    successElement.innerHTML = `
+                                        <h3>Przepraszamy, występują problemy z połączeniem</h3>
+                                        <p>Twoja rezerwacja nie mogła zostać zapisana w bazie danych ze względu na problemy techniczne.</p>
+                                        <p>Prosimy o kontakt telefoniczny lub mailowy w celu dokonania rezerwacji.</p>
+                                    `;
+                                }
+                                
+                                showNotification("Przepraszamy, występują problemy z połączeniem", false);
+                                
+                                // Schowanie komunikatu po 8 sekundach
+                                setTimeout(() => {
+                                    if (successElement) {
+                                        successElement.style.display = "none";
+                                    }
+                                }, 8000);
+                            }, 1500);
+                        });
+                    }
+                    
+                    // Wiadomość dla panelu administratora
+                    const adminSection = document.getElementById("admin-section");
+                    if (adminSection) {
+                        adminSection.innerHTML = `
+                            <div class="container">
+                                <h2>Panel Administratora</h2>
+                                <div style="padding: 30px 20px; text-align: center;">
+                                    <h3>Przepraszamy, panel administratora jest niedostępny</h3>
+                                    <p>Wystąpiły problemy z połączeniem do bazy danych. Spróbuj ponownie później.</p>
+                                    <button id="refresh-btn" style="max-width: 200px; margin: 20px auto;">Odśwież stronę</button>
+                                </div>
+                            </div>
+                        `;
+                        
+                        const refreshBtn = document.getElementById("refresh-btn");
+                        if (refreshBtn) {
+                            refreshBtn.addEventListener("click", function() {
+                                window.location.reload();
+                            });
+                        }
+                    }
+                    
+                    // Uproszczony widok kalendarza
+                    const calendarSection = document.getElementById("calendar-section");
+                    if (calendarSection) {
+                        const calendarContainer = calendarSection.querySelector(".container");
+                        if (calendarContainer) {
+                            calendarContainer.innerHTML = `
+                                <h2>Dostępne Terminy</h2>
+                                <div style="padding: 30px 20px; text-align: center;">
+                                    <h3>Przepraszamy, kalendarz jest niedostępny</h3>
+                                    <p>Wystąpiły problemy z połączeniem do bazy danych. Spróbuj ponownie później lub skontaktuj się z nami bezpośrednio.</p>
+                                    <button id="refresh-calendar-btn" style="max-width: 200px; margin: 20px auto;">Odśwież stronę</button>
+                                </div>
+                            `;
+                            
+                            const refreshBtn = document.getElementById("refresh-calendar-btn");
+                            if (refreshBtn) {
+                                refreshBtn.addEventListener("click", function() {
+                                    window.location.reload();
+                                });
                             }
                         }
                     }
-                });
-                
-                calendar.render();
-            }
-            
-            // Obsługa formularza rezerwacji
-            document.getElementById("bookingForm").addEventListener("submit", function(event) {
-                event.preventDefault();
-                
-                const fieldsToValidate = [
-                    'meetingType', 'name', 'email', 'phone', 
-                    'weddingDate', 'weddingPlace', 'availableSlots'
-                ];
-                
-                if (!validateForm('bookingForm', fieldsToValidate)) {
-                    return;
+                    
+                    // Zastępcze dane dla selecta z terminami
+                    const slotsContainer = document.getElementById("availableSlots");
+                    if (slotsContainer) {
+                        slotsContainer.innerHTML = "<option value=''>Wystąpił problem z połączeniem</option>";
+                    }
                 }
                 
-                showLoader('booking-loader');
-                
-                const slotId = document.getElementById("availableSlots").value;
-                
-                // Dane do zapisania w bazie danych
-                const bookingData = {
-                    meetingType: document.getElementById("meetingType").value,
-                    name: document.getElementById("name").value,
-                    email: document.getElementById("email").value,
-                    phone: document.getElementById("phone").value,
-                    weddingDate: document.getElementById("weddingDate").value,
-                    weddingPlace: document.getElementById("weddingPlace").value,
-                    services: document.getElementById("services").value,
-                    message: document.getElementById("message").value,
-                    slotId: slotId,
-                    createdAt: new Date()
-                };
-                
-                // Transakcja Firebase - oznaczenie terminu jako zarezerwowany i zapisanie rezerwacji
-                const slotRef = db.collection("availableSlots").doc(slotId);
-                const bookingRef = db.collection("bookings").doc();
-                
-                db.runTransaction(transaction => {
-                    return transaction.get(slotRef).then(slotDoc => {
-                        if (!slotDoc.exists) {
-                            throw new Error("Wybrany termin nie istnieje!");
+                // Admin panel - dodawanie dostępności
+                const adminForm = document.getElementById("adminForm");
+                if (adminForm) {
+                    adminForm.addEventListener("submit", function(event) {
+                        event.preventDefault();
+                        debug("Próba dodania nowego terminu");
+                        
+                        if (!validateForm('adminForm', ['adminDate', 'startTime', 'endTime'])) {
+                            debug("Walidacja formularza administratora nie powiodła się");
+                            return;
                         }
                         
-                        const slotData = slotDoc.data();
-                        if (slotData.booked) {
-                            throw new Error("Termin został już zarezerwowany!");
+                        showLoader('admin-loader');
+                        
+                        const date = document.getElementById("adminDate").value;
+                        const startTime = document.getElementById("startTime").value;
+                        const endTime = document.getElementById("endTime").value;
+                        
+                        debug(`Dodawanie slotów dla daty: ${date}, od ${startTime} do ${endTime}`);
+                        const slots = splitIntoHourlySlots(date, startTime, endTime);
+                        
+                        if (slots.length === 0) {
+                            hideLoader('admin-loader');
+                            debug("Nie utworzono żadnych slotów");
+                            return;
                         }
                         
-                        // Wzbogać dane rezerwacji o dane terminu
-                        bookingData.slotDetails = {
-                            date: slotData.date,
-                            startTime: slotData.startTime,
-                            endTime: slotData.endTime
+                        const db = firebase.firestore();
+                        let batch = db.batch();
+                        slots.forEach(slot => {
+                            let docRef = db.collection("availableSlots").doc();
+                            batch.set(docRef, slot);
+                        });
+                        
+                        batch.commit()
+                            .then(() => {
+                                showNotification("Dostępne godziny zostały dodane.");
+                                debug(`Dodano pomyślnie ${slots.length} slotów`);
+                                document.getElementById("adminForm").reset();
+                                hideLoader('admin-loader');
+                            })
+                            .catch(err => {
+                                showNotification("Błąd podczas dodawania terminów: " + err.message, false);
+                                debug(`Błąd podczas dodawania terminów: ${err.message}`, "error");
+                                hideLoader('admin-loader');
+                            });
+                    });
+                } else {
+                    debug("Nie znaleziono formularza administratora", "warn");
+                }
+                
+                // Ładowanie dostępnych terminów - ULEPSZONE
+                function loadAvailableSlots() {
+                    debug("Ładowanie dostępnych terminów");
+                    
+                    if (!elementExists("availableSlots")) {
+                        debug("Nie znaleziono elementu availableSlots", "error");
+                        return;
+                    }
+                    
+                    const slotsContainer = document.getElementById("availableSlots");
+                    slotsContainer.innerHTML = "<option value=''>Ładowanie terminów...</option>";
+                    
+                    if (!APP_STATE.componentsReady.firestore) {
+                        debug("Firestore nie jest dostępny, nie można załadować terminów", "error");
+                        slotsContainer.innerHTML = "<option value=''>Błąd połączenia z bazą danych</option>";
+                        return;
+                    }
+                    
+                    try {
+                        // Pobieranie tylko przyszłych terminów
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        const todayStr = today.toISOString().split('T')[0];
+                        
+                        const db = firebase.firestore();
+                        db.collection("availableSlots")
+                            .where("booked", "==", false)
+                            .where("date", ">=", todayStr)
+                            .orderBy("date")
+                            .orderBy("startTime")
+                            .get()
+                            .then(snapshot => {
+                                if (!elementExists("availableSlots")) return; // Sprawdź czy element nadal istnieje
+                                
+                                slotsContainer.innerHTML = "<option value=''>Wybierz termin spotkania</option>";
+                                
+                                if (snapshot.empty) {
+                                    slotsContainer.innerHTML = "<option value=''>Brak dostępnych terminów</option>";
+                                    debug("Brak dostępnych terminów");
+                                    return;
+                                }
+                                
+                                snapshot.forEach(doc => {
+                                    const slot = doc.data();
+                                    const option = document.createElement("option");
+                                    option.value = doc.id;
+                                    
+                                    // Formatowanie daty na bardziej przyjazną
+                                    try {
+                                        const dateObj = new Date(slot.date);
+                                        const dayOfWeek = new Intl.DateTimeFormat('pl-PL', { weekday: 'long' }).format(dateObj);
+                                        const formattedDate = new Intl.DateTimeFormat('pl-PL').format(dateObj);
+                                        
+                                        option.textContent = `${formattedDate} (${dayOfWeek}) - ${slot.startTime} do ${slot.endTime}`;
+                                    } catch (formatError) {
+                                        // Obsługa błędu formatowania daty
+                                        debug(`Błąd formatowania daty: ${formatError.message}`, "warn");
+                                        option.textContent = `${slot.date} - ${slot.startTime} do ${slot.endTime}`;
+                                    }
+                                    
+                                    slotsContainer.appendChild(option);
+                                });
+                                
+                                debug(`Załadowano ${snapshot.size} dostępnych terminów`);
+                            })
+                            .catch(error => {
+                                console.error("Błąd pobierania terminów: ", error);
+                                debug(`Błąd pobierania terminów: ${error.message}`, "error");
+                                
+                                if (elementExists("availableSlots")) {
+                                    slotsContainer.innerHTML = "<option value=''>Błąd pobierania terminów</option>";
+                                }
+                                
+                                showNotification("Błąd pobierania terminów: " + error.message, false);
+                            });
+                    } catch (error) {
+                        debug(`Krytyczny błąd podczas próby pobrania terminów: ${error.message}`, "error");
+                        slotsContainer.innerHTML = "<option value=''>Błąd połączenia z bazą danych</option>";
+                        showNotification("Krytyczny błąd aplikacji. Spróbuj odświeżyć stronę.", false);
+                    }
+                }
+                
+                // Obsługa formularza rezerwacji
+                const bookingForm = document.getElementById("bookingForm");
+                if (bookingForm) {
+                    bookingForm.addEventListener("submit", function(event) {
+                        event.preventDefault();
+                        debug("Próba utworzenia rezerwacji");
+                        
+                        const fieldsToValidate = [
+                            'meetingType', 'name', 'email', 'phone', 
+                            'weddingDate', 'weddingPlace', 'availableSlots'
+                        ];
+                        
+                        if (!validateForm('bookingForm', fieldsToValidate)) {
+                            debug("Walidacja formularza rezerwacji nie powiodła się");
+                            return;
+                        }
+                        
+                        showLoader('booking-loader');
+                        
+                        const slotId = document.getElementById("availableSlots").value;
+                        debug(`Rezerwowanie slotu z ID: ${slotId}`);
+                        
+                        // Dane do zapisania w bazie danych
+                        const bookingData = {
+                            meetingType: document.getElementById("meetingType").value,
+                            name: document.getElementById("name").value,
+                            email: document.getElementById("email").value,
+                            phone: document.getElementById("phone").value,
+                            weddingDate: document.getElementById("weddingDate").value,
+                            weddingPlace: document.getElementById("weddingPlace").value,
+                            services: document.getElementById("services").value,
+                            message: document.getElementById("message").value,
+                            slotId: slotId,
+                            createdAt: new Date()
                         };
                         
-                        // Aktualizacja terminu
-                        transaction.update(slotRef, { booked: true });
+                        // Transakcja Firebase - oznaczenie terminu jako zarezerwowany i zapisanie rezerwacji
+                        const db = firebase.firestore();
+                        const slotRef = db.collection("availableSlots").doc(slotId);
+                        const bookingRef = db.collection("bookings").doc();
                         
-                        // Zapisanie rezerwacji
-                        transaction.set(bookingRef, bookingData);
+                        db.runTransaction(transaction => {
+                            return transaction.get(slotRef).then(slotDoc => {
+                                if (!slotDoc.exists) {
+                                    throw new Error("Wybrany termin nie istnieje!");
+                                }
+                                
+                                const slotData = slotDoc.data();
+                                if (slotData.booked) {
+                                    throw new Error("Termin został już zarezerwowany!");
+                                }
+                                
+                                // Wzbogać dane rezerwacji o dane terminu
+                                bookingData.slotDetails = {
+                                    date: slotData.date,
+                                    startTime: slotData.startTime,
+                                    endTime: slotData.endTime
+                                };
+                                
+                                // Aktualizacja terminu
+                                transaction.update(slotRef, { booked: true });
+                                
+                                // Zapisanie rezerwacji
+                                transaction.set(bookingRef, bookingData);
+                            });
+                        })
+                        .then(() => {
+                            // Przygotowanie danych do wysłania email
+                            const slotText = document.getElementById("availableSlots").selectedOptions[0].textContent;
+                            debug("Transakcja rezerwacji powiodła się, wysyłanie emaila...");
+                            
+                            if (!APP_STATE.componentsReady.emailjs) {
+                                debug("EmailJS nie jest dostępny, pomijanie wysyłania emaila", "warn");
+                                throw new Error("Nie można wysłać emaila potwierdzającego");
+                            }
+                            
+                            const templateParams = {
+                                meetingType: bookingData.meetingType,
+                                name: bookingData.name,
+                                email: bookingData.email,
+                                phone: bookingData.phone,
+                                weddingDate: bookingData.weddingDate,
+                                weddingPlace: bookingData.weddingPlace,
+                                services: bookingData.services,
+                                message: bookingData.message,
+                                slot: slotText
+                            };
+                            
+                            // Wysłanie emaila
+                            return emailjs.send("service_f8ccgjc", "template_8x51wzj", templateParams);
+                        })
+                        .then(response => {
+                            hideLoader('booking-loader');
+                            document.getElementById("bookingForm").reset();
+                            
+                            const successElement = document.getElementById("booking-success");
+                            if (successElement) {
+                                successElement.style.display = "block";
+                                successElement.innerHTML = `
+                                    <h3>Rezerwacja została przyjęta!</h3>
+                                    <p>Na podany adres e-mail została wysłana wiadomość z potwierdzeniem.</p>
+                                    <p>Dziękujemy za skorzystanie z naszych usług.</p>
+                                `;
+                            }
+                            
+                            showNotification("Rezerwacja została przyjęta!");
+                            debug("Email wysłany pomyślnie, rezerwacja zakończona");
+                            
+                            // Schowanie komunikatu po 5 sekundach
+                            setTimeout(() => {
+                                if (successElement) {
+                                    successElement.style.display = "none";
+                                }
+                            }, 5000);
+                            
+                            // Odświeżenie listy dostępnych terminów
+                            loadAvailableSlots();
+                        })
+                        .catch(error => {
+                            hideLoader('booking-loader');
+                            debug(`Błąd podczas rezerwacji: ${error.message}`, "error");
+                            
+                            // Sprawdź czy błąd dotyczy tylko emaila
+                            if (error.message === "Nie można wysłać emaila potwierdzającego") {
+                                // Rezerwacja się udała, tylko email nie został wysłany
+                                document.getElementById("bookingForm").reset();
+                                
+                                const successElement = document.getElementById("booking-success");
+                                if (successElement) {
+                                    successElement.style.display = "block";
+                                    successElement.innerHTML = `
+                                        <h3>Rezerwacja została przyjęta!</h3>
+                                        <p>Przepraszamy, wystąpił problem z wysłaniem wiadomości email.</p>
+                                        <p>Prosimy o kontakt, jeśli nie otrzymasz potwierdzenia w ciągu 24 godzin.</p>
+                                    `;
+                                }
+                                
+                                showNotification("Rezerwacja została przyjęta, ale wystąpił problem z wysłaniem emaila", false);
+                                
+                                // Schowanie komunikatu po 8 sekundach
+                                setTimeout(() => {
+                                    if (successElement) {
+                                        successElement.style.display = "none";
+                                    }
+                                }, 8000);
+                                
+                                // Odświeżenie listy dostępnych terminów
+                                loadAvailableSlots();
+                            } else {
+                                showNotification("Błąd podczas rezerwacji: " + error.message, false);
+                            }
+                        });
                     });
-                })
-                .then(() => {
-                    // Przygotowanie danych do wysłania email
-                    const slotText = document.getElementById("availableSlots").selectedOptions[0].textContent;
-                    
-                    const templateParams = {
-                        meetingType: bookingData.meetingType,
-                        name: bookingData.name,
-                        email: bookingData.email,
-                        phone: bookingData.phone,
-                        weddingDate: bookingData.weddingDate,
-                        weddingPlace: bookingData.weddingPlace,
-                        services: bookingData.services,
-                        message: bookingData.message,
-                        slot: slotText
-                    };
-                    
-                    // Wysłanie emaila
-                    return emailjs.send("service_f8ccgjc", "template_8x51wzj", templateParams);
-                })
-                .then(response => {
-                    hideLoader('booking-loader');
-                    document.getElementById("bookingForm").reset();
-                    document.getElementById("booking-success").style.display = "block";
-                    showNotification("Rezerwacja została przyjęta!");
-                    
-                    // Schowanie komunikatu po 5 sekundach
-                    setTimeout(() => {
-                        document.getElementById("booking-success").style.display = "none";
-                    }, 5000);
-                    
-                    // Odświeżenie listy dostępnych terminów
-                    loadAvailableSlots();
-                })
-                .catch(error => {
-                    hideLoader('booking-loader');
-                    showNotification("Błąd podczas rezerwacji: " + error.message, false);
-                });
-            });
-            
-            // Logowanie administratora
-            document.getElementById("login-btn").addEventListener("click", function() {
-                const email = document.getElementById("admin-email").value;
-                const password = document.getElementById("admin-password").value;
-                
-                if (!email || !password) {
-                    showNotification("Wprowadź email i hasło", false);
-                    return;
+                } else {
+                    debug("Nie znaleziono formularza rezerwacji", "warn");
                 }
                 
-                showLoader('login-loader');
-                
-                auth.signInWithEmailAndPassword(email, password)
-                    .then(userCredential => {
-                        hideLoader('login-loader');
-                        document.getElementById("admin-login").style.display = "none";
-                        document.getElementById("admin-panel").style.display = "block";
-                        loadBookings();
-                    })
-                    .catch(error => {
-                        hideLoader('login-loader');
-                        showNotification("Błąd logowania: " + error.message, false);
+                // Logowanie administratora - POPRAWIONE
+                const loginBtn = document.getElementById("login-btn");
+                if (loginBtn) {
+                    loginBtn.addEventListener("click", function() {
+                        debug("Próba logowania administratora");
+                        
+                        if (!elementExists("admin-email") || !elementExists("admin-password")) {
+                            debug("Brak pól logowania", "error");
+                            showNotification("Błąd systemu - brak pól logowania", false);
+                            return;
+                        }
+                        
+                        const email = document.getElementById("admin-email").value;
+                        const password = document.getElementById("admin-password").value;
+                        
+                        if (!email || !password) {
+                            showNotification("Wprowadź email i hasło", false);
+                            debug("Brak emaila lub hasła");
+                            return;
+                        }
+                        
+                        if (!APP_STATE.componentsReady.auth) {
+                            debug("Firebase Auth nie jest dostępne", "error");
+                            showNotification("Usługa autoryzacji jest niedostępna", false);
+                            return;
+                        }
+                        
+                        showLoader('login-loader');
+                        
+                        const auth = firebase.auth();
+                        auth.signInWithEmailAndPassword(email, password)
+                            .then(userCredential => {
+                                hideLoader('login-loader');
+                                document.getElementById("admin-login").style.display = "none";
+                                document.getElementById("admin-panel").style.display = "block";
+                                debug("Logowanie powiodło się, ładowanie rezerwacji...");
+                                loadBookings();
+                            })
+                            .catch(error => {
+                                hideLoader('login-loader');
+                                debug(`Błąd logowania: ${error.code} - ${error.message}`, "error");
+                                
+                                let errorMsg = "Błąd logowania";
+                                if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+                                    errorMsg = "Nieprawidłowy email lub hasło";
+                                } else if (error.code === 'auth/invalid-email') {
+                                    errorMsg = "Nieprawidłowy format emaila";
+                                } else if (error.code === 'auth/too-many-requests') {
+                                    errorMsg = "Zbyt wiele prób logowania. Spróbuj później";
+                                }
+                                
+                                showNotification(errorMsg, false);
+                            });
                     });
-            });
-            
-            // Wylogowanie
-            document.getElementById("logout-btn").addEventListener("click", function() {
-                auth.signOut()
-                    .then(() => {
-                        document.getElementById("admin-login").style.display = "block";
-                        document.getElementById("admin-panel").style.display = "none";
-                        document.getElementById("admin-email").value = "";
-                        document.getElementById("admin-password").value = "";
-                    })
-                    .catch(error => {
-                        showNotification("Błąd wylogowania: " + error.message, false);
-                    });
-            });
-            
-            // Ładowanie rezerwacji dla administratora
-            function loadBookings() {
-                const bookingsListElement = document.getElementById("bookings-list");
-                bookingsListElement.innerHTML = "Ładowanie rezerwacji...";
+                } else {
+                    debug("Nie znaleziono przycisku logowania", "warn");
+                }
                 
-                db.collection("bookings")
-                    .orderBy("createdAt", "desc")
-                    .limit(10)
-                    .get()
-                    .then(
+                // Wylogowanie
+                const logoutBtn = document.getElementById("logout-btn");
+                if (logoutBtn) {
+                    logoutBtn.addEventListener("click", function() {
+                        debug("Wylogowywanie...");
+                        
+                        if (!APP_STATE.componentsReady.auth) {
+                            debug("Firebase Auth nie jest dostępne", "error");
+                            showNotification("Usługa autoryzacji jest niedostępna", false);
+                            window.location.reload(); // Odśwież stronę, aby wymusić reset stanu
+                            return;
+                        }
+                        
+                        const auth = firebase.auth();
+                        auth.signOut()
+                            .then(() => {
+                                document.getElementById("admin-login").style.display = "block";
+                                document.getElementById("admin-panel").style.display = "none";
+                                document.getElementById("admin-email").value = "";
+                                document.getElementById("admin-password").value = "";
+                                debug("Wylogowano pomyślnie");
+                            })
+                            .catch(error => {
+                                debug(`Błąd wylogowania: ${error.message}`, "error");
+                                showNotification("Błąd wylogowania: " + error.message, false);
+                            });
+                    });
+                } else {
+                    debug("Nie znaleziono przycisku wylogowania", "warn");
+                }
+                
+                // Ładowanie rezerwacji dla administratora
+                function loadBookings() {
+                    debug("Ładowanie rezerwacji...");
+                    
+                    if (!elementExists("bookings-list")) {
+                        debug("Nie znaleziono kontenera na listę rezerwacji", "error");
+                        return;
+                    }
+                    
+                    const bookingsListElement = document.getElementById("bookings-list");
+                    bookingsListElement.innerHTML = "Ładowanie rezerwacji...";
+                    
+                    if (!APP_STATE.componentsReady.firestore) {
+                        debug("Firestore nie jest dostępny, nie można załadować rezerwacji", "error");
+                        bookingsListElement.innerHTML = "<p>Błąd połączenia z bazą danych</p>";
+                        return;
+                    }
+                    
+                    try {
+                        const db = firebase.firestore();
+                        db.collection("bookings")
+                            .orderBy("createdAt", "desc")
+                            .limit(10)
+                            .get()
+                            .then(querySnapshot => {
+                                if (!elementExists("bookings-list")) return;
+                                
+                                if (querySnapshot.empty) {
+                                    bookingsListElement.innerHTML = "<p>Brak rezerwacji</p>";
+                                    debug("Brak rezerwacji do wyświetlenia");
+                                    return;
+                                }
+                                
+                                let bookingsHTML = "";
+                                querySnapshot.forEach(doc => {
+                                    const booking = doc.data();
+                                    
+                                    // Formatowanie daty
+                                    let bookingDate = "Brak danych";
+                                    if (booking.slotDetails && booking.slotDetails.date) {
+                                        try {
+                                            const dateObj = new Date(booking.slotDetails.date);
+                                            const formattedDate = new Intl.DateTimeFormat('pl-PL').format(dateObj);
+                                            bookingDate = `${formattedDate}, ${booking.slotDetails.startTime} - ${booking.slotDetails.endTime}`;
+                                        } catch (error) {
+                                            debug(`Błąd formatowania daty spotkania: ${error.message}`, "warn");
+                                            bookingDate = `${booking.slotDetails.date}, ${booking.slotDetails.startTime} - ${booking.slotDetails.endTime}`;
+                                        }
+                                    }
+                                    
+                                    // Formatowanie daty wesela
+                                    let weddingDate = "Brak danych";
+                                    if (booking.weddingDate) {
+                                        try {
+                                            const dateObj = new Date(booking.weddingDate);
+                                            weddingDate = new Intl.DateTimeFormat('pl-PL').format(dateObj);
+                                        } catch (error) {
+                                            debug(`Błąd formatowania daty wesela: ${error.message}`, "warn");
+                                            weddingDate = booking.weddingDate;
+                                        }
+                                    }
+                                    
+                                    bookingsHTML += `
+                                        <div class="booking-item">
+                                            <h4>${booking.name || "Brak nazwy"}</h4>
+                                            <div class="booking-info">
+                                                <div><span>Termin spotkania:</span> ${bookingDate}</div>
+                                                <div><span>Rodzaj spotkania:</span> ${booking.meetingType === "online" ? "Online" : "W biurze"}</div>
+                                                <div><span>Email:</span> ${booking.email || "Brak"}</div>
+                                                <div><span>Telefon:</span> ${booking.phone || "Brak"}</div>
+                                                <div><span>Data wesela:</span> ${weddingDate}</div>
+                                                <div><span>Miejsce wesela:</span> ${booking.weddingPlace || "Nie podano"}</div>
+                                                <div><span>Usługodawcy:</span> ${booking.services || "Nie podano"}</div>
+                                                <div><span>Wiadomość:</span> ${booking.message || "Brak"}</div>
+                                            </div>
+                                        </div>
+                                    `;
+                                });
+                                
+                                bookingsListElement.innerHTML = bookingsHTML;
+                                debug(`Załadowano ${querySnapshot.size} rezerwacji`);
+                            })
+                            .catch(error => {
+                                console.error("Błąd pobierania rezerwacji: ", error);
+                                debug(`Błąd pobierania rezerwacji: ${error.message}`, "error");
+                                
+                                if (elementExists("bookings-list")) {
+                                    bookingsListElement.innerHTML = "<p>Błąd pobierania rezerwacji</p>";
+                                }
+                                
+                                showNotification("Błąd pobierania rezerwacji: " + error.message, false);
+                            });
+                    } catch (error) {
+                        debug(`Krytyczny błąd podczas próby pobrania rezerwacji: ${error.message}`, "error");
+                        bookingsListElement.innerHTML = "<p>Błąd połączenia z bazą danych</p>";
+                    }
+                }
+                
+                // Inicjalizacja aplikacji
+                loadAvailableSlots();
+                
+            } catch (error) {
+                console.error("Błąd podczas inicjalizacji aplikacji:", error);
+                debug(`Błąd krytyczny podczas inicjalizacji aplikacji: ${error.message}`, "error");
+                showNotification("Wystąpił błąd podczas ładowania aplikacji. Odśwież stronę i spróbuj ponownie.", false);
+            }
+        });
+    </script>
+</body>
+</html>
